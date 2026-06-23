@@ -63,7 +63,8 @@ export class CrawlEngine extends EventEmitter {
     }
 
     const dbPath = openDatabase(getDbPath(this.dbName));
-    this.run = createCrawlRun(this.dbName, this.startUrl, this.config);
+    const runName = getDomain(this.startUrl) || this.dbName;
+    this.run = createCrawlRun(runName, this.startUrl, this.config);
 
     // Add list URLs if in list mode
     if (this.config.mode === 'list' && this.config.listUrls) {

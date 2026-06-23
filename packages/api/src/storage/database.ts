@@ -254,17 +254,27 @@ function initializeSchema(db: Database.Database): void {
   `);
 }
 
+let runIdCounter = 0;
+
+function generateRunId(): number {
+  // Combine millisecond timestamp with a per-process counter so two runs
+  // created in the same millisecond never collide. Result fits safely
+  // inside JavaScript's exact-integer range (< 2^53) and SQLite integer.
+  return Date.now() * 1000 + (++runIdCounter % 1000);
+}
+
 export function createCrawlRun(name: string, startUrl: string, config: CrawlConfig): CrawlRun {
   const db = getDatabase();
   const stmt = db.prepare(
-    `INSERT INTO crawl_runs (name, start_url, config, status, started_at, db_path)
-     VALUES (?, ?, ?, ?, ?, ?)`
+    `INSERT INTO crawl_runs (id, name, start_url, config, status, started_at, db_path)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`
   );
   const startedAt = new Date().toISOString();
   const dbPath = getCurrentDbPath() || '';
-  const result = stmt.run(name, startUrl, JSON.stringify(config), 'running', startedAt, dbPath);
+  const id = generateRunId();
+  stmt.run(id, name, startUrl, JSON.stringify(config), 'running', startedAt, dbPath);
   return {
-    id: Number(result.lastInsertRowid),
+    id,
     name,
     startUrl,
     config: JSON.stringify(config),
