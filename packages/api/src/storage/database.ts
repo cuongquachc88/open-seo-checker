@@ -686,6 +686,14 @@ export function getLinksForAnalysis(crawlRunId: number): { source_url_id: number
   ).all(crawlRunId) as { source_url_id: number; target_normalized_url: string; is_internal: number; nofollow: number }[];
 }
 
+export function getAllLinks(crawlRunId: number): CrawlLink[] {
+  const db = getDatabase();
+  const rows = db.prepare(
+    `SELECT * FROM links WHERE crawl_run_id = ? AND link_type = 'a' ORDER BY source_url, target_url`
+  ).all(crawlRunId) as Record<string, unknown>[];
+  return rows.map(rowToLink);
+}
+
 export function updateLinkCounts(urlId: number, updates: Partial<Pick<CrawlUrl, 'inlinks' | 'uniqueInlinks' | 'outlinks' | 'uniqueOutlinks' | 'externalOutlinks' | 'uniqueExternalOutlinks' | 'linkScore' | 'percentOfTotal'>>): void {
   const db = getDatabase();
   const fields: string[] = [];

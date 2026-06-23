@@ -9,6 +9,8 @@ import {
   ListChecks,
   Sparkles,
   GitCompareArrows,
+  Key,
+  Link2,
   Download,
   RefreshCw,
   CheckCircle2,
@@ -41,6 +43,8 @@ import { UrlsTab } from '@/components/urls/UrlsTab';
 import { SitemapTab } from '@/components/sitemap/SitemapTab';
 import { CompareTab } from '@/components/compare/CompareTab';
 import { InsightsTab } from '@/components/ai/InsightsTab';
+import { KeywordsTab } from '@/components/keywords/KeywordsTab';
+import { LinksTab } from '@/components/links/LinksTab';
 
 interface HealthResponse {
   score: number;
@@ -101,7 +105,7 @@ function CrawlDetailContent({
   useDocumentTitle(`Run #${id}`);
   const [tab, setTab] = React.useState<string>(() => {
     const path = window.location.pathname.split('/').pop();
-    return path && ['overview', 'issues', 'urls', 'sitemap', 'compare', 'insights'].includes(path)
+    return path && ['overview', 'issues', 'urls', 'sitemap', 'keywords', 'links', 'compare', 'insights'].includes(path)
       ? path
       : 'overview';
   });
@@ -286,6 +290,12 @@ function CrawlDetailContent({
           <TabsTrigger value="sitemap">
             <Layers className="h-4 w-4" /> Sitemap
           </TabsTrigger>
+          <TabsTrigger value="keywords">
+            <Key className="h-4 w-4" /> Keywords
+          </TabsTrigger>
+          <TabsTrigger value="links">
+            <Link2 className="h-4 w-4" /> Links
+          </TabsTrigger>
           <TabsTrigger value="compare">
             <GitCompareArrows className="h-4 w-4" /> Compare
           </TabsTrigger>
@@ -305,6 +315,8 @@ function CrawlDetailContent({
           {tab === 'issues' ? <IssuesTab runId={id} /> : null}
           {tab === 'urls' ? <UrlsTab runId={id} /> : null}
           {tab === 'sitemap' ? <SitemapTab runId={id} /> : null}
+          {tab === 'keywords' ? <KeywordsTab runId={id} /> : null}
+          {tab === 'links' ? <LinksTab runId={id} /> : null}
           {tab === 'compare' ? <CompareTab currentRunId={id} /> : null}
           {tab === 'insights' ? <InsightsTab runId={id} /> : null}
         </div>

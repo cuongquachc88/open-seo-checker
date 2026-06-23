@@ -9,6 +9,8 @@ import { CrawlEngine } from '../crawler/engine.js';
 import { exportCrawlData } from '../exporters/index.js';
 import { generateXmlSitemap } from '../exporters/sitemap-xml.js';
 import { calculateHealthScore } from '../health-score.js';
+import { analyzeKeywords } from '../analyzer/keywords.js';
+import { analyzeLinkProfile } from '../analyzer/link-profile.js';
 import { callAI } from '../ai/index.js';
 import { enrichCrawlWithIntegrations } from '../integrations/index.js';
 import {
@@ -193,6 +195,36 @@ export async function startServer(port: number): Promise<ServerType> {
       if (!run) return c.json({ error: 'Run not found' }, 404);
       const { severity, category } = getIssueCounts(runId);
       return c.json({ counts: severity, categories: category });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      return c.json({ error: message }, 500);
+    }
+  });
+
+  app.get('/api/crawl/:id/keywords', async c => {
+    const runId = parseInt(c.req.param('id'), 10);
+    if (Number.isNaN(runId)) return c.json({ error: 'Invalid run id' }, 400);
+
+    try {
+      const run = openRunDatabase(runId);
+      if (!run) return c.json({ error: 'Run not found' }, 404);
+      const result = analyzeKeywords(runId);
+      return c.json(result);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      return c.json({ error: message }, 500);
+    }
+  });
+
+  app.get('/api/crawl/:id/links', async c => {
+    const runId = parseInt(c.req.param('id'), 10);
+    if (Number.isNaN(runId)) return c.json({ error: 'Invalid run id' }, 400);
+
+    try {
+      const run = openRunDatabase(runId);
+      if (!run) return c.json({ error: 'Run not found' }, 404);
+      const result = analyzeLinkProfile(runId, run.startUrl);
+      return c.json(result);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       return c.json({ error: message }, 500);

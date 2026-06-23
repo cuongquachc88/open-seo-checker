@@ -83,6 +83,21 @@ export const api = {
   getSitemap: (id: number) =>
     http<string>(`/api/crawl/${id}/sitemap`, {}, 'text'),
 
+  getKeywords: (id: number) =>
+    http<{ topKeywords: { keyword: string; count: number; urls: number }[]; urlKeywords: { url: string; keywords: { keyword: string; count: number }[] }[] }>(
+      `/api/crawl/${id}/keywords`,
+    ),
+
+  getLinks: (id: number) =>
+    http<{
+      internal: number;
+      external: number;
+      nofollow: number;
+      referringDomains: string[];
+      referringPages: { url: string; domain: string; target: string; anchorText?: string }[];
+      outgoingDomains: Record<string, number>;
+    }>(`/api/crawl/${id}/links`),
+
   getHealth: (id: number) =>
     http<{
       score: number;
