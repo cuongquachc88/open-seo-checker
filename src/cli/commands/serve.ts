@@ -1,5 +1,6 @@
 import { Command } from 'commander';
 import { startServer } from '../../server/app.js';
+import { printServerBanner } from '../banner.js';
 import open from 'open';
 
 export const serveCommand = new Command('serve')
@@ -10,7 +11,7 @@ export const serveCommand = new Command('serve')
     const port = parseInt(options.port, 10);
     const server = await startServer(port);
 
-    console.log(`Open SEO Checker server running at http://localhost:${port}`);
+    printServerBanner(port);
 
     if (options.open) {
       await open(`http://localhost:${port}`);

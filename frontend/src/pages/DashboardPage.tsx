@@ -22,6 +22,7 @@ import { Empty } from '@/components/ui/empty';
 import { CenteredLoader } from '@/components/ui/spinner';
 import { useApi, useDocumentTitle } from '@/hooks/useApi';
 import { formatNumber } from '@/lib/utils';
+import { BrandMark } from '@/components/brand/BrandMark';
 import type { CrawlRun } from '@/types/domain';
 
 interface HealthResponse {
@@ -121,10 +122,8 @@ export function DashboardPage(): React.ReactElement {
         <div className="absolute -right-16 -top-12 h-56 w-56 rounded-full ring-grad opacity-50 blur-3xl pointer-events-none" />
         <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center gap-6">
           <div className="flex-1 max-w-2xl">
-            <p className="text-xs font-semibold uppercase tracking-widest text-primary-foreground/70">
-              Open SEO Checker · Professional Edition
-            </p>
-            <h1 className="mt-2 text-3xl md:text-4xl font-bold tracking-tight text-balance">
+            <BrandMark size="xl" subtitle="Professional Edition" className="mb-4" />
+            <h1 className="text-3xl md:text-5xl font-bold tracking-tight text-balance text-primary-foreground">
               Crawl, audit and act on your website's SEO performance.
             </h1>
             <p className="mt-3 text-sm md:text-base text-sidebar-foreground/70 max-w-xl">

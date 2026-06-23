@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { BrandMark } from '@/components/brand/BrandMark';
 
 interface NavItem {
   to: string;
@@ -78,14 +79,8 @@ function SidebarLink({ item }: { item: NavItem }) {
 export function Sidebar() {
   return (
     <aside className="hidden md:flex md:sticky md:top-0 md:self-start md:h-screen w-64 shrink-0 flex-col bg-sidebar text-sidebar-foreground border-r border-sidebar-accent z-20">
-      <div className="flex items-center gap-3 px-5 h-16 border-b border-sidebar-accent">
-        <div className="relative h-9 w-9 rounded-lg ring-grad flex items-center justify-center shadow-glow">
-          <span className="font-bold text-white">O</span>
-        </div>
-        <div className="flex flex-col leading-tight">
-          <span className="text-sm font-semibold tracking-tight">Open SEO Checker</span>
-          <span className="text-[11px] text-sidebar-foreground/60">Professional Dashboard</span>
-        </div>
+      <div className="flex items-center gap-3 px-5 h-20 border-b border-sidebar-accent">
+        <BrandMark size="md" subtitle="Professional" />
       </div>
 
       <nav className="flex-1 px-3 py-4 space-y-6 overflow-y-auto">
