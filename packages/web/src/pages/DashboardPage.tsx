@@ -122,7 +122,7 @@ export function DashboardPage(): React.ReactElement {
         <div className="absolute -right-16 -top-12 h-56 w-56 rounded-full ring-grad opacity-50 blur-3xl pointer-events-none" />
         <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center gap-6">
           <div className="flex-1 max-w-2xl">
-            <BrandMark size="xl" subtitle="Professional Edition" className="mb-4" />
+            <BrandMark size="xl" role="fe" showTag subtitle="Professional Edition" className="mb-4" />
             <h1 className="text-3xl md:text-5xl font-bold tracking-tight text-balance text-primary-foreground">
               Crawl, audit and act on your website's SEO performance.
             </h1>

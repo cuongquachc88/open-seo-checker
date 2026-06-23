@@ -38,7 +38,7 @@ test.describe('404 handling', () => {
     await expect(notFound).toBeVisible();
 
     // Brand mark still renders (so the layout is intact).
-    await expect(page.locator('[aria-label="Open SEO Checker"]').first()).toBeVisible();
+    await expect(page.locator('[aria-label^="Open SEO Checker"]').first()).toBeVisible();
   });
 });
 

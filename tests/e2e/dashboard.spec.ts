@@ -8,8 +8,9 @@ import { expect, test } from '@playwright/test';
 test.describe('Dashboard SPA', () => {
   test('renders the home page with the brand mark', async ({ page }) => {
     await page.goto('/');
-    // Brand mark SVGs (api + sidebar) load with role=img.
-    const brands = page.locator('[aria-label="Open SEO Checker"]');
+    // Brand mark SVGs (api + sidebar) load with role=img. Their aria-label
+    // includes the role suffix, e.g. `Open SEO Checker (FRONTEND)`.
+    const brands = page.locator('[aria-label^="Open SEO Checker"]');
     await expect(brands.first()).toBeVisible();
 
     // Sidebar primary brand label visible.

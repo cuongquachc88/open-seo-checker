@@ -34,5 +34,7 @@ tokens.json
 # Playwright artefacts
 /tests/e2e/.results/
 /tests/e2e/playwright-report/
+/packages/api/test-results/
+/packages/web/test-results/
 /playwright/.cache/
 /playwright/.bin/

@@ -80,7 +80,7 @@ export function Sidebar() {
   return (
     <aside className="hidden md:flex md:sticky md:top-0 md:self-start md:h-screen w-64 shrink-0 flex-col bg-sidebar text-sidebar-foreground border-r border-sidebar-accent z-20">
       <div className="flex items-center gap-3 px-5 h-20 border-b border-sidebar-accent">
-        <BrandMark size="md" subtitle="Professional" />
+        <BrandMark size="md" role="fe" subtitle="Professional" />
       </div>
 
       <nav className="flex-1 px-3 py-4 space-y-6 overflow-y-auto">
