@@ -118,7 +118,7 @@ printf "${GREEN}\xE2\x9C\x93 starting services\xE2\x80\xA6${RESET}\n\n"
 
 # Backend: Hono + SQLite. Colour tag = blue.
 (
-  pnpm dev:server 2>&1 \
+  pnpm --filter @oseo/api dev 2>&1 \
   | tee -a "$BE_LOG" \
   | sed -u "s/^/$(printf "${BLUE}[backend]${RESET}  ")/"
 ) &
@@ -127,7 +127,7 @@ PIDS+=("$BE_PID")
 
 # Frontend: Vite dev server. Colour tag = magenta.
 (
-  pnpm dev:frontend 2>&1 \
+  pnpm --filter @oseo/web dev 2>&1 \
   | tee -a "$FE_LOG" \
   | sed -u "s/^/$(printf "${MAGENTA}[frontend]${RESET} ")/"
 ) &

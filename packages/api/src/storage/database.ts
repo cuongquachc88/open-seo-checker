@@ -2,15 +2,13 @@ import Database from 'better-sqlite3';
 import fs from 'fs';
 import path from 'path';
 import type { CrawlConfig, CrawlIssue, CrawlLink, CrawlRun, CrawlUrl } from '../types/index.js';
+import { crawlsDir } from '../utils/workspace.js';
 
 let currentDb: Database.Database | null = null;
 let currentDbPath: string | null = null;
 
 export function getDbPath(name: string): string {
-  const dir = path.resolve(process.cwd(), 'crawls');
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
+  const dir = crawlsDir();
   const safeName = name.replace(/[^a-zA-Z0-9_-]/g, '_');
   return path.join(dir, `${safeName}.db`);
 }

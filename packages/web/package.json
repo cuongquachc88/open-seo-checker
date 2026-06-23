@@ -1,7 +1,8 @@
 {
-  "name": "open-seo-checker-frontend",
+  "name": "@oseo/web",
   "private": true,
   "version": "0.1.0",
+  "description": "React + Vite dashboard for Open SEO Checker.",
   "type": "module",
   "scripts": {
     "dev": "vite",

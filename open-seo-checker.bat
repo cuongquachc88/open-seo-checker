@@ -9,7 +9,7 @@ if not exist public\index.html (
   )
 )
 
-start "Open SEO Checker" /b node dist\index.js serve --port 7437
+start "Open SEO Checker" /b cmd /c "call pnpm --filter @oseo/api exec oseo serve --port 7437"
 timeout /t 2 /nobreak >nul
 start "" http://localhost:7437
 echo Open SEO Checker is running at http://localhost:7437

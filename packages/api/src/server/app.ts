@@ -25,21 +25,10 @@ import {
 } from '../storage/database.js';
 import pkg from '../../package.json' with { type: 'json' };
 import { parseCrawlConfig } from '../config/index.js';
+import { publicDir, crawlsDir, exportsDir } from '../utils/workspace.js';
 
 const engines = new Map<number, CrawlEngine>();
 const latestProgress = new Map<number, CrawlProgressEvent>();
-
-function publicDir(): string {
-  return path.resolve(process.cwd(), 'public');
-}
-
-function crawlsDir(): string {
-  const dir = path.resolve(process.cwd(), 'crawls');
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
-  return dir;
-}
 
 function openRunDatabase(runId: number): CrawlRun | null {
   const run = getAllRunById(runId);
@@ -233,11 +222,9 @@ export async function startServer(port: number): Promise<ServerType> {
       }
 
       if (body.format === 'xlsx') {
-        const filePath = path.resolve(process.cwd(), 'exports', `crawl-${runId}.xlsx`);
-        const exportDir = path.dirname(filePath);
-        if (!fs.existsSync(exportDir)) {
-          fs.mkdirSync(exportDir, { recursive: true });
-        }
+        const dir = exportsDir();
+        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+        const filePath = path.join(dir, `crawl-${runId}.xlsx`);
         const result = await exportCrawlData(runId, { format: body.format, filePath });
         return c.json({ path: result });
       }

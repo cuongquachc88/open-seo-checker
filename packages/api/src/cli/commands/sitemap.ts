@@ -6,6 +6,7 @@ import { defaultConfig } from '../../config/index.js';
 import { generateXmlSitemap } from '../../exporters/sitemap-xml.js';
 import type { CrawlConfig } from '../../types/index.js';
 import { openDatabase } from '../../storage/database.js';
+import { crawlsDir } from '../../utils/workspace.js';
 
 export const sitemapCommand = new Command('sitemap')
   .description('Generate an XML sitemap by crawling a website')
@@ -26,7 +27,7 @@ export const sitemapCommand = new Command('sitemap')
     };
 
     const dbName = `sitemap-${Date.now()}`;
-    openDatabase(path.resolve(process.cwd(), 'crawls', `${dbName}.db`));
+    openDatabase(path.join(crawlsDir(), `${dbName}.db`));
 
     const engine = new CrawlEngine(config, { dbName });
 

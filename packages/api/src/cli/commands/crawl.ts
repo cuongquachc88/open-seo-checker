@@ -5,6 +5,7 @@ import { defaultConfig, parseCrawlConfig } from '../../config/index.js';
 import { exportCrawlData } from '../../exporters/index.js';
 import type { CrawlConfig } from '../../types/index.js';
 import { openDatabase } from '../../storage/database.js';
+import { crawlsDir } from '../../utils/workspace.js';
 
 export const crawlCommand = new Command('crawl')
   .description('Crawl a website and export the results')
@@ -48,7 +49,7 @@ export const crawlCommand = new Command('crawl')
     };
 
     const dbName = options.dbName || `crawl-${Date.now()}`;
-    openDatabase(path.resolve(process.cwd(), 'crawls', `${dbName}.db`));
+    openDatabase(path.join(crawlsDir(), `${dbName}.db`));
 
     const engine = new CrawlEngine(config, { dbName });
 

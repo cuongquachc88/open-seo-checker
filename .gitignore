@@ -1,22 +1,32 @@
+# Dependencies
 node_modules/
-frontend/node_modules/
+**/node_modules/
+
+# Build output
 dist/
+**/dist/
 *.log
 .logs/
+
+# API build output (TypeScript -> dist/)
+/packages/api/dist/
+
+# Web build output (Vite) goes to /public at the workspace root
+/public/index.html
+/public/favicon.svg
+/public/assets/
+public/styles/tailwind.css
+
+# Vite tsbuildinfo (regenerated each build)
+/packages/web/*.tsbuildinfo
+/packages/web/vite.config.d.ts
+/packages/web/vite.config.js
+
+# Runtime artefacts (kept local, deletable)
 .env
 .env.local
 crawls/
 exports/
 .DS_Store
 coverage/
-*.tsbuildinfo
-frontend/*.tsbuildinfo
-frontend/vite.config.d.ts
-frontend/vite.config.js
-# Vite SPA build output goes here (regenerated each build)
-/public/index.html
-/public/favicon.svg
-/public/assets/
-public/styles/tailwind.css
 tokens.json
-

@@ -26,7 +26,8 @@ export interface GoogleTokenResponse {
 
 const TOKEN_DIR = path.join(os.homedir(), '.open-seo-checker');
 const TOKEN_PATH = path.join(TOKEN_DIR, 'tokens.json');
-const FALLBACK_TOKEN_PATH = path.join(process.cwd(), 'tokens.json');
+import { tokensPath } from '../utils/workspace.js';
+const FALLBACK_TOKEN_PATH = tokensPath();
 
 export function getTokenStorePath(): string {
   try {

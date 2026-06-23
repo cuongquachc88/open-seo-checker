@@ -3,9 +3,10 @@ set -e
 DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$DIR"
 
-# Build the React frontend (builds into public/) and the Hono backend (builds into dist/) if needed.
-if [ ! -f public/index.html ] || [ ! -f dist/index.js ]; then
-  echo "Preparing build artifacts…"
+# Build the React frontend (builds into public/) and the Hono backend
+# (builds into packages/api/dist/) if needed.
+if [ ! -f public/index.html ] || [ ! -f packages/api/dist/index.js ]; then
+  echo "Preparing build artifacts..."
   if command -v pnpm >/dev/null 2>&1; then
     pnpm install --silent
     pnpm build
@@ -16,7 +17,7 @@ if [ ! -f public/index.html ] || [ ! -f dist/index.js ]; then
 fi
 
 # Start the server (it serves both the API on /api/* and the React SPA from public/).
-node dist/index.js serve --port 7437 &
+pnpm --filter @oseo/api exec oseo serve --port 7437 &
 SERVER_PID=$!
 sleep 2
 
