@@ -30,3 +30,9 @@ exports/
 .DS_Store
 coverage/
 tokens.json
+
+# Playwright artefacts
+/tests/e2e/.results/
+/tests/e2e/playwright-report/
+/playwright/.cache/
+/playwright/.bin/
