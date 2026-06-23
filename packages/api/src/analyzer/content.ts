@@ -30,17 +30,6 @@ export function analyzeContent(runId: number): void {
       ));
     }
 
-    if (url.h1Count === 0) {
-      issues.push(createIssue(
-        url,
-        'missing_h1_content',
-        'high',
-        'Missing H1 Heading',
-        'The page does not have an H1 heading.',
-        'Add a single, descriptive H1 heading to the page.'
-      ));
-    }
-
     if (url.h2Count === 0) {
       issues.push(createIssue(
         url,

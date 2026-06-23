@@ -6,6 +6,7 @@ interface AlternateLink {
   source_url: string;
   target_url: string;
   target_normalized_url: string;
+  hreflang: string | null;
 }
 
 interface UrlStatus {
@@ -17,7 +18,7 @@ interface UrlStatus {
 export function analyzeHreflang(runId: number): void {
   const db = getDatabase();
   const alternateLinks = db.prepare(
-    `SELECT source_url_id, source_url, target_url, target_normalized_url
+    `SELECT source_url_id, source_url, target_url, target_normalized_url, hreflang
      FROM links
      WHERE crawl_run_id = ? AND link_type = 'link' AND rel = 'alternate'`
   ).all(runId) as AlternateLink[];
@@ -29,31 +30,45 @@ export function analyzeHreflang(runId: number): void {
   ).all(runId) as UrlStatus[];
   const urlStatusMap = new Map(urlStatusRows.map(r => [r.address, r.status_code]));
   const normalizedStatusMap = new Map(urlStatusRows.map(r => [r.normalized_address, r.status_code]));
+  const crawledUrls = new Set(urlStatusRows.map(r => r.normalized_address));
+
+  // Build a set of source->target pairs so we can verify reciprocal return tags.
+  const linkPairs = new Set<string>();
+  for (const link of alternateLinks) {
+    linkPairs.add(`${link.source_url}|${link.target_normalized_url}`);
+  }
 
   const alternatesBySource = new Map<number, Map<string, AlternateLink[]>>();
-  const allAlternates = new Set<string>();
-  const reverseAlternates = new Map<string, Set<string>>();
 
   for (const link of alternateLinks) {
-    allAlternates.add(link.target_normalized_url);
+    const lang = (link.hreflang || '').toLowerCase();
     const byLang = alternatesBySource.get(link.source_url_id) || new Map<string, AlternateLink[]>();
-    const lang = extractHreflang(link.target_url) || 'unknown';
     const list = byLang.get(lang) || [];
     list.push(link);
     byLang.set(lang, list);
     alternatesBySource.set(link.source_url_id, byLang);
-
-    const reverse = reverseAlternates.get(link.target_normalized_url) || new Set<string>();
-    reverse.add(link.source_url);
-    reverseAlternates.set(link.target_normalized_url, reverse);
   }
 
   const issues: CrawlIssue[] = [];
 
   for (const link of alternateLinks) {
-    const lang = extractHreflang(link.target_url);
+    const lang = (link.hreflang || '').toLowerCase();
 
-    if (!lang || !isValidHreflang(lang)) {
+    if (!lang) {
+      issues.push({
+        urlId: link.source_url_id,
+        url: link.source_url,
+        type: 'missing_hreflang',
+        category: 'hreflang',
+        priority: 'high',
+        title: 'Missing Hreflang Attribute',
+        description: `Alternate link to ${link.target_url} is missing the hreflang attribute.`,
+        howToFix: 'Add an hreflang attribute to every alternate link (e.g., hreflang="en-AU").',
+      });
+      continue;
+    }
+
+    if (!isValidHreflang(lang)) {
       issues.push({
         urlId: link.source_url_id,
         url: link.source_url,
@@ -61,13 +76,14 @@ export function analyzeHreflang(runId: number): void {
         category: 'hreflang',
         priority: 'high',
         title: 'Invalid Hreflang Code',
-        description: `Hreflang target ${link.target_url} does not use a valid ISO 639-1 language or ISO 3166-1 alpha-2 region code.`,
+        description: `Hreflang value "${link.hreflang}" does not use a valid ISO 639-1 language or ISO 3166-1 alpha-2 region code.`,
         howToFix: 'Use valid hreflang values such as "en", "en-US", or "fr" and ensure they match the page content.',
       });
     }
 
+    // Only check status for targets that were actually crawled.
     const status = urlStatusMap.get(link.target_url) ?? normalizedStatusMap.get(link.target_normalized_url);
-    if (status !== null && status !== undefined && status !== 200) {
+    if (crawledUrls.has(link.target_normalized_url) && status !== null && status !== undefined && status !== 200) {
       issues.push({
         urlId: link.source_url_id,
         url: link.source_url,
@@ -80,24 +96,28 @@ export function analyzeHreflang(runId: number): void {
       });
     }
 
-    const returns = reverseAlternates.get(link.source_url);
-    if (!returns || !returns.has(link.target_normalized_url)) {
-      issues.push({
-        urlId: link.source_url_id,
-        url: link.source_url,
-        type: 'missing_hreflang_return_tag',
-        category: 'hreflang',
-        priority: 'medium',
-        title: 'Missing Hreflang Return Tag',
-        description: `The page ${link.target_url} does not link back to ${link.source_url} with an alternate hreflang tag.`,
-        howToFix: 'Add a reciprocal hreflang link on the alternate page pointing back to this page.',
-      });
+    // Only verify return tags for targets that were crawled. External alternates
+    // (e.g. dulux.co.nz) can't be checked from a dulux.com.au crawl.
+    if (crawledUrls.has(link.target_normalized_url)) {
+      const hasReturn = linkPairs.has(`${link.target_normalized_url}|${link.source_url}`);
+      if (!hasReturn) {
+        issues.push({
+          urlId: link.source_url_id,
+          url: link.source_url,
+          type: 'missing_hreflang_return_tag',
+          category: 'hreflang',
+          priority: 'medium',
+          title: 'Missing Hreflang Return Tag',
+          description: `The page ${link.target_url} does not link back to ${link.source_url} with an alternate hreflang tag.`,
+          howToFix: 'Add a reciprocal hreflang link on the alternate page pointing back to this page.',
+        });
+      }
     }
   }
 
   for (const [sourceId, byLang] of alternatesBySource) {
     for (const [lang, links] of byLang) {
-      if (lang === 'unknown') continue;
+      if (lang === '') continue;
       if (links.length > 1) {
         const targets = links.map(l => l.target_url).join(', ');
         issues.push({
@@ -115,26 +135,6 @@ export function analyzeHreflang(runId: number): void {
   }
 
   insertIssues(runId, issues);
-}
-
-function extractHreflang(url: string): string | null {
-  try {
-    const parsed = new URL(url);
-    const segments = parsed.pathname.split('/').filter(Boolean);
-    if (segments.length > 0) {
-      const first = segments[0].toLowerCase();
-      if (isValidHreflang(first)) return first;
-      if (segments.length > 1) {
-        const second = segments[1].toLowerCase();
-        if (isValidHreflang(second)) return second;
-      }
-    }
-    const lang = parsed.searchParams.get('lang') || parsed.searchParams.get('language') || parsed.searchParams.get('hl');
-    if (lang) return lang.toLowerCase();
-  } catch {
-    // ignore malformed URLs
-  }
-  return null;
 }
 
 const ISO_639_1 = new Set([
@@ -177,7 +177,10 @@ const ISO_3166_1_ALPHA_2 = new Set([
 
 function isValidHreflang(value: string): boolean {
   if (!value) return false;
-  const parts = value.toLowerCase().split(/[-_]/);
+  const normalized = value.toLowerCase().trim();
+  // x-default is the special fallback value for hreflang.
+  if (normalized === 'x-default') return true;
+  const parts = normalized.split(/[-_]/);
   if (parts.length === 0 || parts.length > 2) return false;
   const [lang, region] = parts;
   if (!ISO_639_1.has(lang)) return false;

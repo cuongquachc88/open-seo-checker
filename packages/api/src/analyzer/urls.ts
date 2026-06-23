@@ -9,7 +9,6 @@ import {
   hasUnderscore,
   hasUppercase,
   hasUrlParameter,
-  isHttp,
   isOverLength,
 } from '../utils/url.js';
 
@@ -56,10 +55,6 @@ export function analyzeUrls(runId: number): void {
 
     if (isOverLength(address, 115)) {
       issues.push(createIssue(url, 'url_too_long', 'medium', 'URL Too Long', `URL is ${address.length} characters (max recommended 115).`, 'Shorten the URL to improve usability and SEO.'));
-    }
-
-    if (isHttp(address)) {
-      issues.push(createIssue(url, 'insecure_http', 'high', 'Insecure HTTP URL', 'Internal URL uses HTTP instead of HTTPS.', 'Migrate the URL to HTTPS and redirect HTTP to HTTPS.'));
     }
   }
 

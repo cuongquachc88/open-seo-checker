@@ -243,6 +243,7 @@ export function extractLinksFromHtml(
     const rawHref = $(el).attr('href') || '';
     const resolvedUrl = resolveLink(rawHref, effectiveBase);
     if (!resolvedUrl) return;
+    const hreflang = $(el).attr('hreflang') || undefined;
     const isInternal = isInternalUrl(resolvedUrl, baseUrl, config.allowSubdomains);
 
     links.push({
@@ -257,6 +258,7 @@ export function extractLinksFromHtml(
       isStylesheet: false,
       linkType: 'link',
       rel: 'alternate',
+      hreflang,
       nofollow: false,
       noreferrer: false,
       noopener: false,

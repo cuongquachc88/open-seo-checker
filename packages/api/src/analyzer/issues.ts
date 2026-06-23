@@ -33,18 +33,6 @@ export function generateIssues(runId: number, config: CrawlConfig): void {
       ));
     }
 
-    // Mixed content on HTTPS pages
-    if (url.hasMixedContent) {
-      issues.push(createIssue(
-        url,
-        'mixed_content',
-        'high',
-        'Mixed Content',
-        'HTTPS page loads HTTP resources (scripts, stylesheets, images, etc.).',
-        'Update all resource references to use HTTPS.'
-      ));
-    }
-
     // Indexability issues
     if (url.indexability === 'non-indexable' && url.indexabilityStatus) {
       issues.push(createIssue(
@@ -57,17 +45,6 @@ export function generateIssues(runId: number, config: CrawlConfig): void {
       ));
     }
 
-    // Low text ratio
-    if (url.textRatio !== undefined && url.textRatio < 5) {
-      issues.push(createIssue(
-        url,
-        'low_text_ratio',
-        'low',
-        'Low Text Ratio',
-        `Text ratio is ${url.textRatio}%, which is very low.`,
-        'Reduce boilerplate code and increase meaningful content on the page.'
-      ));
-    }
   }
 
   insertIssues(runId, issues);

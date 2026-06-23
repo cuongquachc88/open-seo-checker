@@ -184,6 +184,7 @@ function initializeSchema(db: Database.Database): void {
       noopener INTEGER DEFAULT 0,
       sponsored INTEGER DEFAULT 0,
       ugc INTEGER DEFAULT 0,
+      hreflang TEXT,
       location TEXT NOT NULL DEFAULT 'html',
       position INTEGER DEFAULT 0,
       created_at TEXT DEFAULT CURRENT_TIMESTAMP
@@ -252,6 +253,18 @@ function initializeSchema(db: Database.Database): void {
     CREATE INDEX IF NOT EXISTS idx_structured_data_crawl_run ON structured_data(crawl_run_id);
     CREATE INDEX IF NOT EXISTS idx_structured_data_url ON structured_data(url_id);
   `);
+  runMigrations(db);
+}
+
+function runMigrations(db: Database.Database): void {
+  // Add hreflang column to links table if it doesn't exist (added in a later
+  // version to support proper hreflang analysis).
+  const hasHreflang = db.prepare(
+    `SELECT COUNT(*) as count FROM pragma_table_info('links') WHERE name = 'hreflang'`
+  ).get() as { count: number };
+  if (hasHreflang.count === 0) {
+    db.exec(`ALTER TABLE links ADD COLUMN hreflang TEXT`);
+  }
 }
 
 let runIdCounter = 0;
@@ -850,6 +863,7 @@ function linkToDbRow(link: CrawlLink, crawlRunId: number): Record<string, unknow
     alt_text: link.altText ?? null,
     link_type: link.linkType,
     rel: link.rel ?? null,
+    hreflang: link.hreflang ?? null,
     target: link.target ?? null,
     nofollow: link.nofollow ? 1 : 0,
     noreferrer: link.noreferrer ? 1 : 0,
@@ -878,6 +892,7 @@ function rowToLink(row: Record<string, unknown>): CrawlLink {
     altText: row.alt_text as string | undefined,
     linkType: row.link_type as CrawlLink['linkType'],
     rel: row.rel as string | undefined,
+    hreflang: row.hreflang as string | undefined,
     target: row.target as string | undefined,
     nofollow: Boolean(row.nofollow),
     noreferrer: Boolean(row.noreferrer),

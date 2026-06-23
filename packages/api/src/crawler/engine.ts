@@ -270,7 +270,9 @@ export class CrawlEngine extends EventEmitter {
     // through 3xx responses and returned the final response with the full
     // redirect history attached, so we parse that as the page content.
     const fetchResult = await fetchUrl(normalizedUrl, this.config);
-    this.frontier.markCrawled(normalizedUrl);
+    // Do not mark the original URL as crawled here yet; the redirected URL is
+    // the logical resource we actually processed, and marking both would
+    // double-count the same page in the progress output.
 
     // If the user disabled followRedirects, surface the 3xx as its own URL
     // record and stop before parsing the (tiny) redirect body.
@@ -279,6 +281,7 @@ export class CrawlEngine extends EventEmitter {
       fetchResult.statusCategory === 'redirect' &&
       fetchResult.redirectUrl
     ) {
+      this.frontier.markCrawled(normalizedUrl);
       const redirectUrl: CrawlUrl = {
         address: normalizedUrl,
         normalizedAddress: normalizedUrl,
@@ -315,8 +318,19 @@ export class CrawlEngine extends EventEmitter {
         ? fetchResult.normalizedUrl
         : normalizedUrl;
     if (effectiveUrl !== normalizedUrl) {
-      this.frontier.markCrawled(effectiveUrl);
+      // When the seed URL redirects to a subdomain (e.g. example.com -> www.example.com),
+      // treat that subdomain as part of the same site so the crawl can continue.
+      // Without this, every redirected page is flagged as external and the
+      // post-crawl analysis is skipped, leaving the user with no URLs or issues.
+      if (normalizedUrl === this.startUrl && !this.config.allowSubdomains) {
+        const startDomain = getDomain(this.startUrl);
+        const effectiveDomain = getDomain(effectiveUrl);
+        if (startDomain && effectiveDomain && effectiveDomain.endsWith('.' + startDomain)) {
+          this.config.allowSubdomains = true;
+        }
+      }
     }
+    this.frontier.markCrawled(effectiveUrl);
     const redirectChain = fetchResult.redirectChain ?? [];
 
     // Render JS if configured (render the FINAL URL so we pick up JS-discovered

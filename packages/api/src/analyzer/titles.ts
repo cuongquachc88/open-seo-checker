@@ -36,11 +36,6 @@ export function analyzeTitles(runId: number): void {
       issues.push(createIssue(url, 'multiple_titles', 'high', 'Multiple Title Tags', 'The page contains more than one <title> tag.', 'Remove the duplicate title tag so only one remains.'));
     }
 
-    // Same as h1
-    if (url.h1 && title.trim().toLowerCase() === url.h1.trim().toLowerCase()) {
-      issues.push(createIssue(url, 'title_same_as_h1', 'low', 'Title Same as H1', 'The page title is identical to the H1 heading.', 'Consider making the title and H1 distinct for better SEO.'));
-    }
-
     // Duplicate tracking
     const normalizedTitle = title.trim().toLowerCase();
     const existing = titleMap.get(normalizedTitle) || [];

@@ -189,6 +189,7 @@ export interface CrawlLink {
   altText?: string;
   linkType: 'a' | 'img' | 'link' | 'script' | 'iframe' | 'form' | 'css' | 'meta' | 'other';
   rel?: string;
+  hreflang?: string;
   target?: string;
   nofollow: boolean;
   noreferrer: boolean;

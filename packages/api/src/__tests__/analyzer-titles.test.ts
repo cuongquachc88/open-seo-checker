@@ -99,20 +99,6 @@ describe('analyzeTitles', () => {
     expect(types).toContain('multiple_titles');
   });
 
-  it('flags title identical to h1', () => {
-    const run = makeRun('title-eq-h1');
-    const t = 'Same Title';
-    makeUrl(run.id!, { address: 'https://example.com/same', title1: t, title1Length: t.length, h1: t });
-
-    analyzeTitles(run.id!);
-
-    const types = query<{ type: string }>(
-      'SELECT type FROM issues WHERE crawl_run_id = ?',
-      [run.id],
-    ).map(i => i.type);
-    expect(types).toContain('title_same_as_h1');
-  });
-
   it('does nothing on runs with no internal urls', () => {
     const run = makeRun('title-empty');
 

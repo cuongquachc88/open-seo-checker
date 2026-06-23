@@ -2,37 +2,12 @@ import type { CrawlIssue } from '../types/index.js';
 import { getDatabase, getUrls, insertIssues } from '../storage/database.js';
 import * as cheerio from 'cheerio';
 
-interface ImageLink {
-  source_url_id: number;
-  source_url: string;
-  target_url: string;
-  alt_text: string | null;
-}
-
 export function analyzeAccessibility(runId: number): void {
   const urls = getUrls(runId, { isInternal: true });
   if (urls.length === 0) return;
 
   const issues: CrawlIssue[] = [];
   const db = getDatabase();
-  const imageRows = db.prepare(
-    `SELECT source_url_id, source_url, target_url, alt_text
-     FROM links
-     WHERE crawl_run_id = ? AND is_image = 1 AND (alt_text IS NULL OR alt_text = '')`
-  ).all(runId) as ImageLink[];
-
-  for (const image of imageRows) {
-    issues.push({
-      urlId: image.source_url_id,
-      url: image.source_url,
-      type: 'missing_alt_text',
-      category: 'accessibility',
-      priority: 'high',
-      title: 'Missing Image Alt Text',
-      description: `Image ${image.target_url} is missing alt text.`,
-      howToFix: 'Add descriptive alt text to the image for screen readers and search engines.',
-    });
-  }
 
   for (const url of urls) {
     if (!url.rawHtml) continue;

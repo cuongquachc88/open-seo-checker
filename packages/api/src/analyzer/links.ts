@@ -14,13 +14,12 @@ export function analyzeLinks(runId: number): void {
   const issues: CrawlIssue[] = [];
   const nonDescriptiveAnchors = new Set<string>();
   const nofollowInternalAnchors = new Set<string>();
-  const unsafeLinks = new Set<string>();
 
   for (const url of urls) {
     const outlinks = getOutlinks(runId, url.id!);
 
     for (const link of outlinks) {
-      // Only analyze anchor links for descriptive text and unsafe links
+      // Only analyze anchor links for descriptive text and nofollow usage.
       if (link.linkType === 'a') {
         if (isNonDescriptiveAnchor(link)) {
           nonDescriptiveAnchors.add(link.anchorText?.toLowerCase() || '');
@@ -30,11 +29,6 @@ export function analyzeLinks(runId: number): void {
         if (link.isInternal && link.nofollow) {
           nofollowInternalAnchors.add(link.targetUrl);
           issues.push(createLinkIssue(url, link, 'nofollow_internal_link', 'low', 'Nofollow Internal Link', 'Internal link uses rel="nofollow".', 'Remove nofollow from internal links unless there is a specific reason.'));
-        }
-
-        if (isUnsafeCrossOriginLink(link)) {
-          unsafeLinks.add(link.targetUrl);
-          issues.push(createLinkIssue(url, link, 'unsafe_cross_origin_link', 'high', 'Unsafe Cross-Origin Link', 'External link opens in a new tab without rel="noopener" or uses rel="opener".', 'Add rel="noopener noreferrer" to external links with target="_blank".'));
         }
       }
     }
@@ -101,15 +95,6 @@ function isNonDescriptiveAnchor(link: CrawlLink): boolean {
   const text = link.anchorText.trim().toLowerCase();
   const nonDescriptive = ['click', 'click here', 'here', 'read more', 'more', 'link', 'this', 'that', 'page', 'website', 'site'];
   return nonDescriptive.includes(text);
-}
-
-function isUnsafeCrossOriginLink(link: CrawlLink): boolean {
-  if (link.isInternal) return false;
-  if (link.linkType !== 'a') return false;
-  if (!link.target || link.target.toLowerCase() !== '_blank') return false;
-  // Safe if noopener and noreferrer are present
-  if (link.noopener && link.noreferrer) return false;
-  return true;
 }
 
 function createLinkIssue(

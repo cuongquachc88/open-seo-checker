@@ -88,15 +88,25 @@ export function analyzeCanonicals(runId: number): void {
         }
       }
 
-      if (url.redirectUrl && canonical && url.redirectUrl === canonical) {
-        issues.push(createIssue(
-          url,
-          'canonical_chain_loop',
-          'critical',
-          'Canonical Chain or Loop',
-          'The canonical URL matches the page redirect URL, which can create a loop or chain.',
-          'Fix the redirect or canonical declaration so the canonical points directly to the final URL.'
-        ));
+      // A canonical that points to an earlier URL in the redirect chain is wrong
+      // because that URL itself redirects. The canonical should point to the final
+      // destination (the current page address).
+      if (url.redirectChain && url.redirectChain.length > 0 && canonical) {
+        const resolvedCanonical = normalizeUrl(canonical, url.address);
+        if (
+          resolvedCanonical &&
+          resolvedCanonical !== url.address &&
+          url.redirectChain.includes(resolvedCanonical)
+        ) {
+          issues.push(createIssue(
+            url,
+            'canonical_chain_loop',
+            'critical',
+            'Canonical Chain or Loop',
+            'The canonical URL points to an earlier URL in the redirect chain, which itself redirects.',
+            'Update the canonical to point directly to the final destination URL.'
+          ));
+        }
       }
     }
   }
