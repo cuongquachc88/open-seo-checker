@@ -10,7 +10,12 @@ exports/
 coverage/
 *.tsbuildinfo
 frontend/*.tsbuildinfo
-public/assets/
+frontend/vite.config.d.ts
+frontend/vite.config.js
+# Vite SPA build output goes here (regenerated each build)
+/public/index.html
+/public/favicon.svg
+/public/assets/
 public/styles/tailwind.css
 tokens.json
 
