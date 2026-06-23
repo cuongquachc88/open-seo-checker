@@ -1,28 +1,24 @@
 import * as React from 'react';
-import { Sparkles, Send, Bot, Wand2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Sparkles, Send, Bot, Wand2, AlertTriangle, Settings as SettingsIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { api } from '@/lib/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Empty } from '@/components/ui/empty';
 import { useDocumentTitle } from '@/hooks/useApi';
-
-type Provider = 'openai' | 'anthropic' | 'gemini' | 'kimi' | 'minimax' | 'ollama';
-
-const PROVIDERS: { id: Provider; label: string; models: string[]; authless?: boolean }[] = [
-  { id: 'openai', label: 'OpenAI', models: ['gpt-4o-mini', 'gpt-4o', 'gpt-4.1-mini', 'gpt-3.5-turbo'] },
-  { id: 'anthropic', label: 'Anthropic Claude', models: ['claude-3-5-sonnet', 'claude-3-haiku'] },
-  { id: 'gemini', label: 'Google Gemini', models: ['gemini-1.5-pro', 'gemini-1.5-flash', 'gemini-2.0-flash'] },
-  { id: 'kimi', label: 'Kimi (Moonshot)', models: ['moonshot-v1-32k', 'moonshot-v1-128k'] },
-  { id: 'minimax', label: 'MiniMax', models: ['MiniMax-Text-01'] },
-  { id: 'ollama', label: 'Ollama (local)', models: ['llama3.2', 'qwen2.5'], authless: true },
-];
+import {
+  AI_PROVIDERS,
+  loadAiSettings,
+  loadApiKeys,
+  resolveActiveAi,
+  saveAiSettings,
+  type AIProviderId,
+  type AISettings,
+} from '@/lib/ai-settings';
 
 const PROMPT_TEMPLATES: { id: string; label: string; prompt: string }[] = [
   {
@@ -53,38 +49,31 @@ const PROMPT_TEMPLATES: { id: string; label: string; prompt: string }[] = [
 
 export function InsightsTab({ runId }: { runId: number }): React.ReactElement {
   useDocumentTitle(`AI Insights · Run #${runId}`);
-  const [provider, setProvider] = React.useState<Provider>('openai');
-  const [model, setModel] = React.useState('gpt-4o-mini');
-  const [apiKey, setApiKey] = React.useState('');
+
+  // Read latest settings each time the tab mounts so changes done in the
+  // Settings page show up here immediately.
+  const [settings, setSettings] = React.useState<AISettings>(() => loadAiSettings());
+  const [keys, setKeys] = React.useState(() => loadApiKeys());
   const [prompt, setPrompt] = React.useState(PROMPT_TEMPLATES[0].prompt);
   const [output, setOutput] = React.useState<string | null>(null);
   const [busy, setBusy] = React.useState(false);
 
-  const available = PROVIDERS.find((p) => p.id === provider)!;
-
-  const onProviderChange = (next: Provider) => {
-    setProvider(next);
-    const first = PROVIDERS.find((p) => p.id === next);
-    setModel(first?.models[0] ?? '');
-  };
+  const active = React.useMemo(() => resolveActiveAi(settings, keys), [settings, keys]);
 
   const submit = async () => {
+    if (!active || !active.ready) return;
     if (!prompt.trim()) {
       toast.error('Enter a prompt');
-      return;
-    }
-    if (!available.authless && !apiKey) {
-      toast.error('API key required for this provider');
       return;
     }
     setBusy(true);
     setOutput(null);
     try {
       const result = await api.callAi({
-        provider,
-        model,
+        provider: active.provider.id,
+        model: active.model,
         prompt,
-        apiKey,
+        apiKey: active.apiKey,
       });
       setOutput(result.content);
       toast.success('Insight generated');
@@ -97,6 +86,28 @@ export function InsightsTab({ runId }: { runId: number }): React.ReactElement {
     }
   };
 
+  if (!settings.provider) {
+    return (
+      <NotConfiguredCard
+        title="AI provider not configured"
+        description="Pick an AI provider in Settings to unlock the AI Insights tab."
+        ctaLabel="Open Settings"
+        reason="No provider has been set yet"
+      />
+    );
+  }
+
+  if (!active || !active.ready) {
+    return (
+      <NotConfiguredCard
+        title="Missing API key"
+        description={`Add the ${active?.provider.label ?? ''} API key in Settings to enable AI insights.`}
+        ctaLabel="Open Settings"
+        reason={active?.reason ?? 'No key set for this provider'}
+      />
+    );
+  }
+
   return (
     <div className="space-y-4">
       <Card>
@@ -104,56 +115,17 @@ export function InsightsTab({ runId }: { runId: number }): React.ReactElement {
           <CardTitle className="flex items-center gap-2 text-base">
             <Sparkles className="h-4 w-4 text-primary" /> AI insights
           </CardTitle>
-          <CardDescription>
-            Generate strategic guidance using any of the supported models. Run summary is included
-            automatically when the prompt needs context.
+          <CardDescription className="flex items-center gap-2 flex-wrap">
+            <span>
+              Using <strong>{active.provider.label}</strong> · <code>{active.model}</code>.
+            </span>
+            <Button variant="link" size="sm" className="h-auto p-0" asChild>
+              <Link to="/settings">
+                <SettingsIcon className="h-3 w-3" /> Change provider
+              </Link>
+            </Button>
           </CardDescription>
         </CardHeader>
-        <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="space-y-2">
-            <Label>Provider</Label>
-            <Select value={provider} onValueChange={(v) => onProviderChange(v as Provider)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {PROVIDERS.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label>Model</Label>
-            <Select value={model} onValueChange={setModel}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {available.models.map((m) => (
-                  <SelectItem key={m} value={m}>
-                    {m}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label>
-              API key{' '}
-              {available.authless ? <Badge variant="muted">local - not required</Badge> : null}
-            </Label>
-            <Input
-              type="password"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              placeholder={available.authless ? 'n/a for local models' : 'sk-...'}
-              autoComplete="off"
-            />
-          </div>
-        </CardContent>
       </Card>
 
       <Card>
@@ -220,7 +192,7 @@ export function InsightsTab({ runId }: { runId: number }): React.ReactElement {
             <Empty
               icon={<Bot className="h-5 w-5" />}
               title="No insights yet"
-              description="Pick a provider, model and prompt to generate AI-powered guidance for this crawl."
+              description="Compose a prompt above and press Run prompt to generate AI-powered guidance for this crawl."
             />
           )}
         </CardContent>
@@ -232,3 +204,45 @@ export function InsightsTab({ runId }: { runId: number }): React.ReactElement {
     </div>
   );
 }
+
+function NotConfiguredCard({
+  title,
+  description,
+  ctaLabel,
+  reason,
+}: {
+  title: string;
+  description: string;
+  ctaLabel: string;
+  reason: string;
+}) {
+  return (
+    <Card>
+      <CardContent className="p-10 text-center space-y-4">
+        <div className="inline-flex h-12 w-12 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+          <AlertTriangle className="h-6 w-6" />
+        </div>
+        <div className="space-y-1">
+          <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
+          <p className="text-sm text-muted-foreground max-w-md mx-auto">{description}</p>
+          <p className="text-xs text-muted-foreground/80">{reason}</p>
+        </div>
+        <div className="flex justify-center gap-2 pt-2">
+          <Button variant="brand" asChild>
+            <Link to="/settings">
+              <SettingsIcon className="h-4 w-4" /> {ctaLabel}
+            </Link>
+          </Button>
+          <Button variant="outline" asChild>
+            <Link to={`/crawl/${typeof window !== 'undefined' ? window.location.pathname.split('/')[2] : ''}`}>
+              Back to run
+            </Link>
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// Re-export for callers that still want the prompt templates.
+export { PROMPT_TEMPLATES };
