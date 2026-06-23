@@ -90,10 +90,10 @@ export function printRoleBanner({
   const out: string[] = [];
   if (newlineBefore) out.push('');
   if (boxedRender) {
-    out.push(renderBanner(ANSI.cyan));
+    out.push(renderBanner(roleColor));
   }
   out.push(
-    `  ${ANSI.bold}${roleColor}\u25CF${reset}  ${ANSI.bold}${role.toUpperCase()}${reset}  ${dim}x${reset} ${ANSI.bold}${stack}${reset}`,
+    `  ${ANSI.bold}${roleColor}\u25CF${reset}  ${ANSI.bold}${roleColor}${role.toUpperCase()}${reset}  ${dim}x${reset} ${ANSI.bold}${stack}${reset}`,
   );
   for (const line of lines) out.push(line);
   out.push('');
@@ -108,6 +108,19 @@ export function printServerBanner(port: number, version?: string): void {
     lines: [
       `  ${ANSI.dim}v${version ?? '0.1.0'}${ANSI.reset}    ${ANSI.bold}\u25B6${ANSI.reset} listening on ${ANSI.bold}${ANSI.green}http://localhost:${port}${ANSI.reset}`,
       `  ${ANSI.dim}Dashboard SPA served on the same port.${ANSI.reset}`,
+      `  ${ANSI.dim}Ctrl+C to stop. Logs forwarded to ${process.stdout.isTTY ? 'terminal' : 'stdout'}.${ANSI.reset}`,
+    ],
+  });
+}
+
+/** Convenience: frontend banner (magenta-themed, distinct from server). */
+export function printFrontendBanner(port: number, version?: string): void {
+  printRoleBanner({
+    role: 'frontend',
+    stack: 'Vite + React 19',
+    lines: [
+      `  ${ANSI.dim}v${version ?? '0.1.0'}${ANSI.reset}    ${ANSI.bold}\u25B6${ANSI.reset} dev server on ${ANSI.bold}${ANSI.green}http://localhost:${port}${ANSI.reset}`,
+      `  ${ANSI.dim}/api proxied to the backend at :7437 (HMR + SPA).${ANSI.reset}`,
       `  ${ANSI.dim}Ctrl+C to stop. Logs forwarded to ${process.stdout.isTTY ? 'terminal' : 'stdout'}.${ANSI.reset}`,
     ],
   });

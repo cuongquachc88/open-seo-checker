@@ -135,32 +135,46 @@ FE_PID=$!
 PIDS+=("$FE_PID")
 
 # -----------------------------------------------------------------------------
-# Readiness probe: wait until the backend's HTTP socket answers, then
-# announce. Fail fast if the backend process exits early.
+# Readiness probes: poll each service until it answers HTTP, then emit a
+# colour-coded status row that clearly distinguishes BACKEND (blue) from
+# FRONTEND (magenta). Fail fast if either process exits early.
 # -----------------------------------------------------------------------------
-printf "${DIM}waiting for backend on :7437\xE2\x80\xA6${RESET}\n"
-ready=0
-for _ in $(seq 1 50); do
-  if ! kill -0 "$BE_PID" 2>/dev/null; then
-    printf "\n${RED}backend exited before opening :7437.${RESET}\n"
-    printf "${DIM}last lines of $BE_LOG:${RESET}\n"
-    tail -n 30 "$BE_LOG" | sed 's/^/    /'
-    shutdown "early-exit"
-  fi
-  if curl -sf -o /dev/null --max-time 1 http://localhost:7437/api/runs 2>/dev/null \
-  || curl -sf -o /dev/null --max-time 1 http://localhost:7437/          2>/dev/null; then
-    ready=1
-    break
-  fi
-  sleep 0.4
-done
+probe_ready() {
+  local label="$1"
+  local pid="$2"
+  local url="$3"
+  local log="$4"
+  local tag_color="$5"
+  local stack_label="$6"
 
-if [ "$ready" -eq 1 ]; then
-  printf "\n${GREEN}\xE2\x9C\x93 backend ready${RESET}    \xE2\x86\x92 http://localhost:7437\n"
-  printf "${GREEN}\xE2\x9C\x93 frontend booting${RESET}  \xE2\x86\x92 http://localhost:5173\n\n"
-else
-  printf "\n${YELLOW}! backend never answered on :7437 within 20s. check $BE_LOG${RESET}\n\n"
-fi
+  for _ in $(seq 1 50); do
+    if ! kill -0 "$pid" 2>/dev/null; then
+      printf "\n${RED}%s exited before opening %s.${RESET}\n" "$label" "$url"
+      printf "${DIM}last lines of %s:${RESET}\n" "$log"
+      tail -n 30 "$log" | sed 's/^/    /'
+      shutdown "early-exit"
+    fi
+    if curl -sf -o /dev/null --max-time 1 "$url" 2>/dev/null; then
+      printf "${GREEN}\xE2\x9C\x93${RESET}  ${tag_color}\xE2\x97\x8F${RESET}  ${BOLD}%-9s${RESET}  ${DIM}stack${RESET} ${tag_color}${stack_label}${RESET}  ${BOLD}\xE2\x86\x92${RESET} ${BOLD}%s${RESET}\n" \
+        "$label" "$url"
+      return 0
+    fi
+    sleep 0.4
+  done
+  printf "${YELLOW}!${RESET}   ${tag_color}\xE2\x97\x8F${RESET}  ${BOLD}%-9s${RESET}  ${YELLOW}did not respond within 20s; check %s${RESET}\n" \
+    "$label" "$log"
+  return 1
+}
+
+probe_ready "backend"  "$BE_PID" "http://localhost:7437/api/runs" "$BE_LOG"  "$BLUE"    "Hono + SQLite"
+probe_ready "frontend" "$FE_PID" "http://localhost:5173/"           "$FE_LOG"  "$MAGENTA" "Vite + React"
+
+printf "\n${DIM}role layout:${RESET}\n"
+printf "  ${BLUE}\xE2\x97\x8F${RESET}  ${BOLD}%-9s${RESET}  ${BOLD}%-32s${RESET} ${DIM}API + SPA on the same port${RESET}\n" \
+  "backend"  "http://localhost:7437"
+printf "  ${MAGENTA}\xE2\x97\x8F${RESET}  ${BOLD}%-9s${RESET}  ${BOLD}%-32s${RESET} ${DIM}/api proxied to the backend${RESET}\n" \
+  "frontend" "http://localhost:5173"
+printf "\n${DIM}(tip: tail logs in another terminal with \xE2\x80\x9Cpnpm monitor\xE2\x80\x9D)${RESET}\n\n"
 
 # Block until either child exits.
 wait "${PIDS[0]}" "${PIDS[1]}" 2>/dev/null || true
