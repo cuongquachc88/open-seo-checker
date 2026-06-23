@@ -132,9 +132,9 @@
     <main>
       <h2 id="setup">1. Setup</h2>
       <pre><code>$ pnpm install
-$ pnpm --filter @oseo/api dev     # tsx watch backend at :7437
-$ pnpm --filter @oseo/web dev     # vite dev server at :5173
-$ pnpm start:sh                  # both at once, with banner + auto-install
+$ pnpm --filter @oseo/api dev     # tsx watch backend at :7437 (blue BE banner)
+$ pnpm --filter @oseo/web dev     # vite dev server at :5173 (magenta FE banner)
+$ pnpm start:sh                  # both at once, shared wordmark + auto-install
 
 # Quality
 $ pnpm test:unit                  # vitest unit suite (api)
@@ -149,14 +149,15 @@ $ PW_BOOT=1 pnpm test:e2e         # spawn dev:sh, run, teardown</code></pre>
           <tr><td><code>packages/api/src/crawler/</code></td><td>api</td><td>Engine, fetcher, parser, links, robots, log analyzer</td></tr>
           <tr><td><code>packages/api/src/integrations/</code></td><td>api</td><td>One file per third-party API (GA4, GSC, PSI, Majestic, Ahrefs, Moz)</td></tr>
           <tr><td><code>packages/api/src/ai/</code></td><td>api</td><td>One file per LLM provider</td></tr>
-          <tr><td><code>packages/api/src/server/app.ts</code></td><td>api</td><td>Hono app, REST routes, SPA fallback</td></tr>
+          <tr><td><code>packages/api/src/server/app.ts</code></td><td>api</td><td>Hono app, REST routes, SPA fallback, prints the blue backend banner on startup</td></tr>
           <tr><td><code>packages/api/src/storage/database.ts</code></td><td>api</td><td>SQLite schema, prepared statements, transactions</td></tr>
           <tr><td><code>packages/api/src/utils/workspace.ts</code></td><td>api</td><td>Resolves <code>public/</code>, <code>crawls/</code>, <code>exports/</code> relative to the workspace root</td></tr>
           <tr><td><code>packages/web/src/components/&lt;page&gt;/</code></td><td>web</td><td>One folder per dashboard page</td></tr>
           <tr><td><code>packages/web/src/components/ui/</code></td><td>web</td><td>shadcn-style primitives (button, card, sheet, tabs, ...)</td></tr>
           <tr><td><code>packages/web/src/lib/api.ts</code></td><td>web</td><td>API client wrapping the Hono endpoints</td></tr>
           <tr><td><code>packages/web/src/lib/ai-settings.ts</code></td><td>web</td><td>Provider catalogue + localStorage helpers</td></tr>
-          <tr><td><code>start.sh</code></td><td>workspace</td><td>Big banner + BE+FE orchestrator with readiness probes + Node/pnpm auto-install</td></tr>
+          <tr><td><code>packages/web/vite.config.ts</code></td><td>web</td><td>Vite config + <code>oseo-frontend-banner</code> plugin that prints the magenta frontend banner</td></tr>
+          <tr><td><code>start.sh</code></td><td>workspace</td><td>Shared wordmark + BE+FE orchestrator with readiness probes + Node/pnpm auto-install</td></tr>
         </tbody>
       </table>
       <div class="callout">

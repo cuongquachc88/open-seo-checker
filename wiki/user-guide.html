@@ -183,7 +183,7 @@ $ pnpm server                 # production: API + SPA on :7437</code></pre>
         </div>
         <div>
           <h4>Dev orchestrator <code>pnpm start:sh</code></h4>
-          <p>Big ASCII banner, colour-tagged backend &amp; frontend logs, readiness probes, Ctrl+C graceful shutdown. Best while iterating.</p>
+          <p>Shared wordmark + colour-tagged backend &amp; frontend logs, readiness probes, Ctrl+C graceful shutdown. Best while iterating. The backend and frontend processes each print their own solid-colour role banner (blue BE, magenta FE).</p>
         </div>
         <div>
           <h4>One-click launcher</h4>
@@ -195,17 +195,24 @@ $ pnpm server                 # production: API + SPA on :7437</code></pre>
         </div>
       </div>
       <p>
-        When <code>pnpm start:sh</code> is up, the orchestrator prints a colour
-        table that pins the role (backend / frontend) to its port with a
-        bright accent. The backend dot is <span style="color:var(--be); font-weight:bold;">● blue</span>,
-        the frontend dot is <span style="color:var(--fe); font-weight:bold;">● magenta</span>.
+        When <code>pnpm start:sh</code> is up, each role prints its own
+        banner in the shared terminal. The backend banner is solid
+        <span style="color:var(--be); font-weight:bold;">● blue</span>
+        and the frontend banner is solid
+        <span style="color:var(--fe); font-weight:bold;">● magenta</span>,
+        so you always know which process produced a log line.
       </p>
-      <pre><code>✓  ●  backend   stack Hono + SQLite   → http://localhost:7437/api/runs
-✓  ●  frontend  stack Vite + React    → http://localhost:5173/
+      <pre><code>+========================================================================+
+|   ... OPEN SEO CHECKER wordmark ...                                    |
+| ●  BACKEND  ·  Hono + SQLite                                           |
++========================================================================+
+  v0.1.0    ▶ listening on http://localhost:7437
 
-role layout:
-  ●  backend    http://localhost:7437    API + SPA on the same port
-  ●  frontend   http://localhost:5173    /api proxied to the backend</code></pre>
++========================================================================+
+|   ... OPEN SEO CHECKER wordmark ...                                    |
+| ●  FRONTEND  ·  Vite + React 19                                        |
++========================================================================+
+  v0.1.0    ▶ dev server on http://localhost:5173</code></pre>
 
       <h2 id="crawl">3. Run a crawl</h2>
       <p>
