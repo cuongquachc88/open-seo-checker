@@ -3,6 +3,7 @@ import path from 'path';
 import { CrawlEngine } from '../../crawler/engine.js';
 import { defaultConfig, parseCrawlConfig } from '../../config/index.js';
 import { exportCrawlData } from '../../exporters/index.js';
+import { ANSI, printOk, printError, printBullet, printCrawlBanner } from '../banner.js';
 import type { CrawlConfig } from '../../types/index.js';
 import { openDatabase } from '../../storage/database.js';
 import { crawlsDir } from '../../utils/workspace.js';
@@ -55,19 +56,29 @@ export const crawlCommand = new Command('crawl')
 
     engine.on('progress', event => {
       if (options.verbose) {
-        console.log(`[${event.type}] Crawled: ${event.urlsCrawled}, Found: ${event.urlsFound}, Errors: ${event.errors}`);
+        console.log(`${ANSI.dim}[${event.type}]${ANSI.reset} Crawled: ${ANSI.bold}${event.urlsCrawled}${ANSI.reset}, Found: ${event.urlsFound}, Errors: ${event.errors}`);
       } else if (event.type === 'progress') {
-        process.stdout.write(`\rCrawled: ${event.urlsCrawled} | Found: ${event.urlsFound} | Errors: ${event.errors} | Queue: ${event.urlsQueued}`);
+        process.stdout.write(
+          `\r${ANSI.dim}Crawled:${ANSI.reset} ${ANSI.bold}${event.urlsCrawled}${ANSI.reset}  ${ANSI.dim}Found:${ANSI.reset} ${event.urlsFound}  ${ANSI.dim}Errors:${ANSI.reset} ${event.errors}  ${ANSI.dim}Queue:${ANSI.reset} ${event.urlsQueued}    `,
+        );
       }
     });
 
-    console.log(`Starting crawl of ${url}`);
+    printCrawlBanner(url, config.mode);
+
     const run = await engine.start();
-    console.log(`\nCrawl completed. Run ID: ${run.id}`);
-    console.log(`URLs crawled: ${run.urlsCrawled}`);
-    console.log(`URLs found: ${run.urlsFound}`);
-    console.log(`Errors: ${run.errors}`);
-    console.log(`Redirects: ${run.redirects}`);
+    // Move past the live progress line so the summary doesn't collide.
+    process.stdout.write('\n');
+
+    printOk(`Crawl completed`, `run id ${ANSI.bold}${run.id}${ANSI.reset}`);
+    printBullet('URLs crawled', `${ANSI.bold}${run.urlsCrawled}${ANSI.reset}`);
+    printBullet('URLs found', `${run.urlsFound}`);
+    if (run.errors > 0) {
+      printError('Errors during crawl', `${run.errors} — see the database for details`);
+    } else {
+      printOk('No errors');
+    }
+    printBullet('Redirects', `${run.redirects}`);
 
     if (options.output) {
       const outputPath = path.resolve(options.output);
@@ -75,7 +86,7 @@ export const crawlCommand = new Command('crawl')
         format: options.format,
         filePath: outputPath,
       });
-      console.log(`Report exported to ${outputPath}`);
+      printOk('Report exported', outputPath);
     }
   });
 

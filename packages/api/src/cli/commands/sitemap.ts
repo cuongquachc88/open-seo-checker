@@ -4,6 +4,7 @@ import path from 'path';
 import { CrawlEngine } from '../../crawler/engine.js';
 import { defaultConfig } from '../../config/index.js';
 import { generateXmlSitemap } from '../../exporters/sitemap-xml.js';
+import { ANSI, printRoleBanner, printOk, printBullet } from '../banner.js';
 import type { CrawlConfig } from '../../types/index.js';
 import { openDatabase } from '../../storage/database.js';
 import { crawlsDir } from '../../utils/workspace.js';
@@ -33,16 +34,29 @@ export const sitemapCommand = new Command('sitemap')
 
     engine.on('progress', event => {
       if (event.type === 'progress') {
-        process.stdout.write(`\rCrawled: ${event.urlsCrawled} | Found: ${event.urlsFound}`);
+        process.stdout.write(
+          `\r${ANSI.dim}Crawled:${ANSI.reset} ${ANSI.bold}${event.urlsCrawled}${ANSI.reset}  ${ANSI.dim}Found:${ANSI.reset} ${event.urlsFound}    `,
+        );
       }
     });
 
-    console.log(`Generating sitemap for ${url}`);
+    printRoleBanner({
+      role: 'sitemap',
+      stack: 'XML sitemap generator',
+      lines: [
+        `  ${ANSI.dim}target${ANSI.reset}  ${ANSI.bold}${url}${ANSI.reset}`,
+        `  ${ANSI.dim}output${ANSI.reset}  ${ANSI.bold}${path.resolve(options.output)}${ANSI.reset}`,
+      ],
+    });
+
     const run = await engine.start();
-    console.log(`\nCrawl completed. ${run.urlsCrawled} URLs crawled.`);
+    process.stdout.write('\n');
+
+    printOk('Crawl completed', `${ANSI.bold}${run.urlsCrawled}${ANSI.reset} URLs crawled`);
 
     const sitemap = generateXmlSitemap(run.id!, { includeImages: true });
     const outputPath = path.resolve(options.output);
     fs.writeFileSync(outputPath, sitemap);
-    console.log(`Sitemap written to ${outputPath}`);
+    printBullet('Sitemap size', `${(sitemap.length / 1024).toFixed(1)} KiB`);
+    printOk('Sitemap written', outputPath);
   });
