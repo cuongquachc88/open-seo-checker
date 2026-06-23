@@ -1,214 +1,298 @@
 # Open SEO Checker
 
-A free, open-source, cross-platform website crawler and SEO auditing tool that replicates the core features of **Screaming Frog SEO Spider** and adds many capabilities that Screaming Frog does not have.
+A free, open-source, cross-platform website crawler and SEO auditing tool that
+replicates the core features of **Screaming Frog SEO Spider** and adds many
+capabilities that Screaming Frog does not have.
 
 - **CLI + Web UI**: One command launches a local web server and opens your browser.
 - **No crawl limits**: Completely free, no paid tiers, no URL restrictions.
 - **MIT licensed**: Use it personally or commercially.
+- **Monorepo**: backend and frontend ship as separate pnpm packages that talk
+  over HTTP and JS-rendering uses Playwright Chromium that we install at
+  first-run time.
+
+> Documentation lives in two places:
+>   - This README — quickstart, features, project layout, API surface.
+>   - `wiki/` — HTML guides for users (running the tool) and developers
+>     (extending it). Open `wiki/index.html` directly in your browser.
 
 ## Quick Start
 
 ```bash
-# Install dependencies
+git clone <this-repo>
+cd open-seo-checker
+
+# Install everything (deps + Playwright Chromium browser)
 pnpm install
 
-# Build the React frontend + backend (one command)
-pnpm build
+# One of:
 
-# Launch the web UI (auto-opens browser)
-./open-seo-checker.sh          # macOS / Linux
-open-seo-checker.bat          # Windows
+# Single-port production run (build, then serve API + dashboard on :7437):
+pnpm build && pnpm server
 
-# Or run the CLI directly
-node dist/index.js crawl https://example.com --output report.csv
+# Or the dev orchestrator with live reload + bright banner:
+pnpm dev:sh
+
+# Or just the one-click launcher that auto-builds + opens Chrome:
+./open-seo-checker.sh        # macOS / Linux
+open-seo-checker.bat         # Windows
 ```
 
-The web UI runs at `http://localhost:7437` by default.
+The dashboard is served at `http://localhost:7437`. The dev orchestrator also
+boots Vite on `http://localhost:5173` with `/api` proxied to the backend so
+HMR works in the browser (`pnpm dev:sh`):
 
-> Tip: the launcher scripts auto-build if no artefacts are present, so you can ship the
-> project as-is and first-time users only need `pnpm install` followed by launching the
-> appropriate shell / batch file.
+| Origin                | Role                                            |
+|-----------------------|-------------------------------------------------|
+| `http://localhost:7437` | Hono API + dashboard SPA built to `/public/` |
+| `http://localhost:5173` | Vite dev server (only when `pnpm dev:sh`)    |
 
 ## CLI Commands
 
+All commands are exposed via the api package's `bin` shortcut `oseo`:
+
+| Command                                 | Description                                         |
+|-----------------------------------------|-----------------------------------------------------|
+| `oseo serve [--port N] [--no-open]`     | Boot the Hono API + SPA server (default port 7437)  |
+| `oseo crawl <url> [--render] [--render] [--db-name] [--output]`  | One-off crawl against a single URL    |
+| `oseo sitemap <url> [--output sitemap.xml]`                       | Crawl + emit a sitemap.xml stub file     |
+| `oseo compare <db1> <db2>`             | Diff two crawl databases                             |
+| `oseo logs <logfile> [--bot googlebot]` | Analyze a server log file for bot traffic            |
+| `oseo health <db-file> [--run-id N]`   | Compute the health score for a stored run            |
+
+Or through `pnpm` proxy scripts:
+
 ```bash
-node dist/index.js crawl <url> [options]
-node dist/index.js serve [--port 7437]
-node dist/index.js sitemap <url> [options]
-node dist/index.js compare <db1> <db2> [--mapping file.json]
-node dist/index.js logs <logfile> [--bot googlebot]
-node dist/index.js health <db-file> [--run-id 1]
+pnpm server       # equivalent to `oseo serve`
+pnpm crawl        # equivalent to `oseo crawl`
 ```
 
-## Technology Stack
-
-- **Backend runtime**: Node.js + TypeScript
-- **Web server**: Hono (Express-compatible, edge-friendly)
-- **HTTP client**: undici
-- **HTML parsing**: cheerio
-- **JavaScript rendering**: Playwright (Chromium)
-- **Database**: SQLite (better-sqlite3)
-- **Frontend**: Vite + React 18 + TypeScript + Tailwind CSS + shadcn/ui-style components
-- **Charts**: Recharts
-- **Data grid**: TanStack Table
-- **Routing**: react-router-dom
-- **Export**: CSV, JSON, XLSX, XML sitemaps
-
-## Features
-
-### Screaming Frog Parity
-
-- **Crawl Engine**: Spider + list mode, robots.txt compliance, custom user-agent, crawl depth, concurrency, redirects, sitemaps.
-- **On-Page SEO**: Page titles, meta descriptions, headings (H1/H2), canonicals, hreflang, pagination, images, URL structure.
-- **Technical SEO**: Broken links, redirect chains/loops, internal linking, anchor text, security headers, mixed content, robots directives.
-- **Rendering**: JavaScript rendering flag (Playwright), structured data extraction, AMP validation structure, accessibility checks.
-- **Content**: Duplicate content, near-duplicate detection, word count, text ratio, spelling/grammar hooks, custom extraction (XPath/CSS/regex).
-- **Integrations**: Google Analytics 4, Google Search Console, PageSpeed Insights, Majestic, Ahrefs, Moz.
-- **AI**: OpenAI, Anthropic Claude, Google Gemini, Kimi (Moonshot), MiniMax, Ollama (local) support.
-- **Export**: CSV, JSON, XLSX, XML sitemaps, crawl comparison, scheduling.
-
-### Beyond Screaming Frog
-
-- **Log File Analysis**: Parse server logs to find bot crawl behavior, orphan URLs, and crawl budget waste.
-- **Backlink Analysis**: Analyze external links pointing to your domain from the crawl data.
-- **Keyword Extraction**: Extract top keywords from titles, headings, and meta descriptions.
-- **Content Scoring**: Score pages for content quality, keyword density, and readability.
-- **Local SEO**: NAP consistency, LocalBusiness schema, contact page signals.
-- **E-commerce SEO**: Product/BreadcrumbList schema, faceted navigation, cart/checkout indexability.
-- **AI Search Visibility**: llms.txt generation, E-E-A-T signal checks.
-- **SEO Health Score**: Overall 0-100 score with category breakdowns.
-- **Crawl Comparison**: Compare two crawl databases to see added/removed/changed URLs.
-- **Scheduling**: Built-in cron-like scheduler for recurring audits.
-
-## Project Structure
+## Monorepo Layout
 
 ```
-open-seo-checker/
-├── src/                         # Backend (Node + TypeScript)
-│   ├── analyzer/                # SEO analysis modules
-│   ├── ai/                      # LLM provider integrations
-│   ├── cli/                     # CLI commands
-│   ├── compare/                 # Crawl comparison
-│   ├── config/                  # Default crawl configuration
-│   ├── crawler/                 # Crawl engine, fetcher, parser
-│   ├── ecommerce/               # E-commerce SEO audits
-│   ├── exporters/               # CSV, JSON, XLSX, sitemap generators
-│   ├── health-score.ts          # Overall health score calculation
-│   ├── integrations/            # Google APIs, Majestic, Ahrefs, Moz
-│   ├── keywords/                # Keyword extraction
-│   ├── local-seo/               # Local SEO audits
-│   ├── llms/                    # llms.txt support
-│   ├── backlinks/               # Backlink analysis
-│   ├── renderer/                # Playwright JS rendering
-│   ├── scoring/                 # Content scoring
-│   ├── scheduler/               # Cron-like scheduler
-│   ├── server/                  # Hono web server + API routes
-│   ├── storage/                 # SQLite database layer
-│   ├── types/                   # TypeScript types
-│   └── utils/                   # URL, pixel-width, hash utilities
-├── frontend/                    # Vite + React + shadcn-style UI
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── ui/              # Buttons, cards, tabs, sheets, etc.
-│   │   │   ├── layout/          # App shell, sidebar, topbar
-│   │   │   ├── dashboard/       # Stat cards, gauge, charts
-│   │   │   ├── issues/          # Issues explorer
-│   │   │   ├── urls/            # URL explorer (TanStack Table)
-│   │   │   ├── sitemap/         # Sitemap viewer
-│   │   │   ├── compare/         # Run comparison
-│   │   │   └── ai/              # AI insights
-│   │   ├── pages/               # Top-level routes
-│   │   ├── hooks/               # useApi, useInterval, useDocumentTitle
-│   │   └── lib/                 # api.ts, utils.ts
-│   └── vite.config.ts           # Outputs to ../public/
-├── public/                      # Static output of vite build
-├── crawls/                      # SQLite crawl databases
-├── scripts/                     # Build/postinstall scripts
-├── open-seo-checker.sh          # macOS/Linux launcher (build + run + open browser)
-├── open-seo-checker.bat         # Windows launcher
-└── package.json
+open-seo-checker/                        ← @oseo/workspace  (orchestrator only)
+├── pnpm-workspace.yaml                  ← declares packages/api, packages/web
+├── tsconfig.base.json                   ← shared TS options
+├── playwright.config.ts                 ← e2e tests (chrome only)
+├── package.json                         ← scripts + shared devDeps
+
+├── packages/
+│   ├── api/                             ← @oseo/api  (Hono + SQLite, bin "oseo")
+│   │   ├── src/
+│   │   │   ├── analyzer/                ← titles, meta, headings, links, security...
+│   │   │   ├── ai/                      ← OpenAI, Anthropic, Gemini, Kimi, ...
+│   │   │   ├── cli/                     ← commander + banner + commands
+│   │   │   ├── compare/, config/,       ←
+│   │   │   ├── crawler/                 ← engine, fetcher, parser, links, robots
+│   │   │   ├── ecommerce/, keywords/,
+│   │   │   ├── local-seo/, llms/, scoring/, backlinks/
+│   │   │   ├── exporters/               ← csv/json/xlsx/xml-exporters
+│   │   │   ├── integrations/            ← GA4, GSC, PSI, Ahrefs, Majestic, Moz
+│   │   │   ├── renderer/                ← playwright-based JS rendering
+│   │   │   ├── scheduler/               ← cron-like recurring crawls
+│   │   │   ├── server/                  ← Hono app + REST routes
+│   │   │   ├── storage/                 ← SQLite schema, migrations, queries
+│   │   │   ├── types/                   ← CrawlUrl, CrawlIssue, ...
+│   │   │   └── utils/                   ← workspace resolver, pixel-width, ...
+│   │   ├── src/__tests__/               ← vitest unit suites
+│   │   ├── vitest.config.ts             ← vitest config scoped to the api
+│   │   └── tsconfig.json                ← extends base
+│   └── web/                             ← @oseo/web  (React 18 + Vite 6)
+│       ├── src/
+│       │   ├── components/              ← layout/, dashboard/, issues/, ...
+│       │   ├── pages/                   ← top-level route components
+│       │   ├── hooks/                   ← useApi, useDocumentTitle, ...
+│       │   └── lib/                     ← api.ts, ai-settings.ts, utils.ts
+│       ├── public/                      ← favicon (built asset)
+│       ├── vite.config.ts               ← outDir = ../../public at workspace root
+│       └── tsconfig.json                ← extends base
+
+├── public/                              ← SPA build output (gitignored)
+├── crawls/  exports/                    ← runtime artefacts (gitignored)
+├── wiki/                                ← HTML doc (user + dev guide)
+├── scripts/
+│   ├── dev.sh                           ← single-command BE+FE orchestrator
+│   ├── monitor.sh                       ← second-screen tailer for dev.sh logs
+│   └── postinstall.mjs                  ← installs Playwright Chromium
+├── open-seo-checker.sh  /  .bat         ← one-click launcher
+└── README.md, PLAN.md
 ```
+
+## npm Scripts
+
+Root scripts (`package.json`):
+
+| Command                  | Meaning                                                     |
+|--------------------------|-------------------------------------------------------------|
+| `pnpm build`             | `pnpm -r --filter './packages/*' build`                     |
+| `pnpm build:api` / `:web` | Build only that package                                    |
+| `pnpm dev`               | `concurrently` running both `dev:api` and `dev:web`        |
+| `pnpm dev:api`           | tsx watch backend (Hono) only, with auto-restart          |
+| `pnpm dev:web`           | Vite dev server with HMR, proxies /api to the backend    |
+| `pnpm dev:sh`            | `bash scripts/dev.sh` — print banner + colour-tagged BE+FE logs + readiness probes + role layout |
+| `pnpm monitor`           | `bash scripts/monitor.sh` — second-screen tailer          |
+| `pnpm server`            | `pnpm --filter @oseo/api start` — run compiled API         |
+| `pnpm crawl`             | `pnpm --filter @oseo/api crawl`  — run a single-shot crawl|
+| `pnpm test:unit`         | vitest unit suite in `packages/api`                       |
+| `pnpm test:e2e`          | Playwright e2e suite (needs a running server; set `PW_BOOT=1` to spin up `pnpm dev:sh` itself) |
+| `pnpm lint`              | `pnpm -r --filter './packages/*' lint`                   |
+
+Inside each package the same scripts work via `pnpm --filter @oseo/api ...` /
+`pnpm --filter @oseo/web ...`.
 
 ## Frontend Architecture
 
-The dashboard is a single-page React app built with Vite and shipped as static assets into
-`public/`. The Hono backend serves both `/api/*` and `/` from the same port (default 7437).
-
-Build pipeline:
+The dashboard is a single-page React app. Build pipeline:
 
 ```
-frontend/  --pnpm build-->  public/  (HTML + hashed assets, served by Hono)
-src/      --tsc-->          dist/    (CLI + server compiled to JS)
+packages/web  --pnpm build--->  /public/  (HTML + hashed assets)
+                                  ↑
+                       served by Hono on :7437
+                                          (and /api/*)
+
+packages/api  --tsc-->         /packages/api/dist/ (CLI + server JS)
+                  └── exposes "oseo" binary
 ```
 
 Top-level features:
 
-- **App shell** with persistent sidebar nav, breadcrumbs, command-style global search and
-  dark mode.
-- **Dashboard overview** with hero health gauge, stat tiles, recent runs list and severity
-  distribution chart.
-- **New Crawl** wizard with full configuration (modes, depth, threads, behaviour, JS
-  rendering, API keys).
-- **Crawl detail** with 6 tabs:
-  - **Overview** - composite health score, per-category breakdown, quick wins.
-  - **Issues** - grouped by category + priority with "how to fix" hints.
-  - **URLs** - filterable, sortable data table with row sheet showing in/out links.
-  - **Sitemap** - XML preview with copy / download.
-  - **Compare** - diff against any baseline run (added / removed / changed).
-  - **AI Insights** - OpenAI / Anthropic / Gemini / Kimi / MiniMax / Ollama prompts.
-- **Reports, Runs, Sitemap Studio, Compare Runs, AI Insights** as standalone tools.
-- **Settings** for storing API keys locally (browser-only, never sent to a backend except the
-  respective provider).
+- **App shell** with persistent sidebar nav, breadcrumbs, command-style
+  global search and dark mode.
+- **Dashboard overview** with hero health gauge, stat tiles, recent runs
+  list and severity distribution chart.
+- **New Crawl** wizard with full configuration (modes, depth, threads,
+  behaviour, JS rendering, API keys).
+- **Crawl detail** with 6 tabs: Overview, Issues, URLs, Sitemap, Compare
+  and AI Insights.
+- **Reports, Runs, Sitemap Studio, Compare Runs, AI Insights** as
+  standalone tools.
+- **Settings** for storing API keys locally (browser-only, never sent to
+  the backend except the respective provider).
 
-## Development
+## Features
+
+### Screaming Frog parity
+
+- **Crawl Engine**: Spider + list mode, robots.txt compliance, custom
+  user-agent, crawl depth, concurrency, redirects (now followed
+  transparently via recursive fetcher with cycle detection), sitemaps.
+- **On-Page SEO**: Page titles, meta descriptions, headings (H1/H2),
+  canonicals, hreflang, pagination, images, URL structure.
+- **Technical SEO**: Broken links, redirect chains/loops, internal
+  linking, anchor text, security headers, mixed content, robots
+  directives.
+- **Rendering**: JavaScript rendering flag (Playwright), structured data
+  extraction, AMP validation structure, accessibility checks.
+- **Content**: Duplicate content, near-duplicate detection, word count,
+  text ratio, spelling/grammar hooks, custom extraction
+  (XPath / CSS / regex).
+- **Integrations**: Google Analytics 4, Google Search Console,
+  PageSpeed Insights, Majestic, Ahrefs, Moz.
+- **AI**: OpenAI, Anthropic Claude, Google Gemini, Kimi (Moonshot),
+  MiniMax, Ollama (local) support.
+- **Export**: CSV, JSON, XLSX, XML sitemaps, crawl comparison,
+  scheduling.
+
+### Beyond Screaming Frog
+
+- **Log File Analysis**: Parse server logs to find bot crawl behavior,
+  orphan URLs, and crawl budget waste.
+- **Backlink Analysis**: Analyze external links pointing to your domain
+  from the crawl data.
+- **Keyword Extraction**: Extract top keywords from titles, headings,
+  and meta descriptions.
+- **Content Scoring**: Score pages for content quality, keyword density,
+  readability.
+- **Local SEO**: NAP consistency, LocalBusiness schema, contact page
+  signals.
+- **E-commerce SEO**: Product / BreadcrumbList schema, faceted navigation,
+  cart / checkout indexability.
+- **AI Search Visibility**: `llms.txt` generation, E-E-A-T signal
+  checks.
+- **SEO Health Score**: Overall 0-100 score with category breakdowns.
+- **Crawl Comparison**: Compare two crawl databases to see added /
+  removed / changed URLs.
+- **Scheduling**: Built-in cron-like scheduler for recurring audits.
+
+## Tests
+
+Two test layers:
 
 ```bash
-# Run in development mode with auto-reload (tsx)
-npm run dev
+pnpm test:unit        # 26 vitest specs in packages/api/src/__tests__
+pnpm test:e2e         # 23 Playwright specs under tests/e2e/
 
-# Type-check
-npx tsc --noEmit
-
-# Build for production
-npm run build
-
-# Run tests (when tests are added)
-npm test
+# Self-bootstrapping — also spins up `pnpm dev:sh`:
+PW_BOOT=1 pnpm test:e2e
 ```
+
+Coverage of `pnpm test:unit`:
+- `analyzer-titles.test.ts` (8) – missing / too-long / too-short /
+  duplicate / multi-title / title==h1.
+- `analyzer-meta.test.ts`   (6) – missing / length bounds / duplicates / multi / balanced.
+- `analyzer-headings.test.ts` (6) – missing-h1 / multi-h1 / dup /
+  non-sequential / h1==title / long-h1.
+- `analyzer-images.test.ts`  (6) – missing alt / oversized /
+  missing dimensions / broken / empty alt only / no-op.
+
+Coverage of `pnpm test:e2e`:
+- **API smoke** — `/api/runs`, `/api/runs/:id`,
+  `/api/runs/:id/issues`, `/api/runs/:id/urls`, `/`.
+- **Dashboard SPA** — root renders with brand mark, sidebar lists
+  the eight routes, click-through navigation reaches /crawl, /runs,
+  /settings without errors.
+- **SPA routes** — parametrised smoke for every deep route, plus
+  the 404 fallback.
+- **Settings / AI** — settings card and the Insights empty state.
 
 ## API Endpoints
 
-The web server exposes these REST endpoints:
-
-- `GET /api/health` - Server health check
-- `POST /api/crawl` - Start a crawl
-- `GET /api/crawl/:id/status` - Crawl status + progress
-- `GET /api/crawl/:id/urls` - Crawled URLs
-- `GET /api/crawl/:id/issues` - SEO issues
-- `GET /api/crawl/:id/issues/counts` - Issue counts
-- `GET /api/crawl/:id/url/:urlId` - URL details with inlinks/outlinks
-- `GET /api/crawl/:id/sitemap` - XML sitemap
-- `GET /api/crawl/:id/health` - Health score
-- `POST /api/crawl/:id/export` - Export data (csv/json/xlsx)
-- `POST /api/crawl/:id/integrations` - Trigger API integrations
-- `POST /api/ai` - Call an LLM provider
-- `GET /api/runs` - List all crawl runs
+| Method | Path                              | Purpose                            |
+|--------|-----------------------------------|------------------------------------|
+| GET    | `/api/health`                     | Server health check                |
+| POST   | `/api/crawl`                      | Start a crawl                      |
+| GET    | `/api/crawl/:id/status`           | Crawl status + progress            |
+| GET    | `/api/crawl/:id/urls`             | Crawled URLs                       |
+| GET    | `/api/crawl/:id/issues`           | SEO issues                         |
+| GET    | `/api/crawl/:id/issues/counts`    | Issue counts                       |
+| GET    | `/api/crawl/:id/url/:urlId`       | URL details with inlinks / outlinks|
+| GET    | `/api/crawl/:id/sitemap`          | XML sitemap                        |
+| GET    | `/api/crawl/:id/health`           | Health score                       |
+| POST   | `/api/crawl/:id/export`           | Export data (csv / json / xlsx)    |
+| POST   | `/api/crawl/:id/integrations`     | Trigger API integrations           |
+| POST   | `/api/ai`                         | Call an LLM provider               |
+| GET    | `/api/runs`                       | List all crawl runs                |
 
 ## Configuration
 
-Crawl configuration is passed as JSON to `/api/crawl` or via CLI flags. Key options:
+Crawl configuration is passed as JSON to `/api/crawl` or via CLI flags. Key
+options:
 
-- `startUrl`: Starting URL
-- `maxUrls`: Maximum URLs to crawl
-- `maxDepth`: Maximum crawl depth
-- `threads`: Concurrent workers
-- `userAgent`: Custom user agent
-- `renderJs`: Enable JavaScript rendering
-- `respectRobotsTxt`: Honor robots.txt
-- `allowSubdomains`: Treat subdomains as internal
-- `crawlExternal`: Follow and record external links
-- `apiKeys`: API keys for integrations and AI
-- `aiPrompts`: Custom AI prompts to run during crawl
+- `startUrl`: Starting URL.
+- `maxUrls`: Maximum URLs to crawl.
+- `maxDepth`: Maximum crawl depth.
+- `threads`: Concurrent workers.
+- `userAgent`: Custom user agent.
+- `renderJs`: Enable JavaScript rendering.
+- `respectRobotsTxt`: Honor robots.txt.
+- `allowSubdomains`: Treat subdomains as internal.
+- `crawlExternal`: Follow and record external links.
+- `followRedirects`: HTTP redirect chain handling.
+- `apiKeys`: API keys for integrations and AI.
+- `aiPrompts`: Custom AI prompts to run during crawl.
+
+## Wiki
+
+HTML documentation ships in `wiki/`:
+
+- `wiki/index.html` — hub linking user and dev guides.
+- `wiki/user-guide.html` — how a user runs and operates the dashboard.
+- `wiki/dev-guide.html` — extension points, conventions, tests.
+- `wiki/architecture.html` — system layout, data flow, decision log.
+
+Open `wiki/index.html` in your browser; both guides are hosted as static
+HTML so they can be served from any web server (or even double-clicked
+locally without one).
 
 ## License
 
