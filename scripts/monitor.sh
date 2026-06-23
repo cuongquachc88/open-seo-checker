@@ -3,7 +3,7 @@
 #  Open SEO Checker · monitor mode
 # -----------------------------------------------------------------------------
 #  Tails the orchestrator's log files from another terminal. Useful when the
-#  dev.sh process is running in tmux / separate TTY and you want a dedicated
+#  start.sh process is running in tmux / separate TTY and you want a dedicated
 #  monitor screen.
 # =============================================================================
 set -u
@@ -14,7 +14,7 @@ BE_LOG="$LOG_DIR/backend.log"
 FE_LOG="$LOG_DIR/frontend.log"
 
 if [ ! -f "$BE_LOG" ] || [ ! -f "$FE_LOG" ]; then
-  printf "\033[33mNo logs found at %s. Run scripts/dev.sh first.\033[0m\n" "$LOG_DIR" >&2
+  printf "\033[33mNo logs found at %s. Run ./start.sh first.\033[0m\n" "$LOG_DIR" >&2
   exit 1
 fi
 

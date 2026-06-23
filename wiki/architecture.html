@@ -168,7 +168,7 @@
       <ul>
         <li><strong><span style="color:var(--be)">@oseo/api</span></strong> — Hono + better-sqlite3, exposes the <code>oseo</code> CLI + REST API + SPA fallback.</li>
         <li><strong><span style="color:var(--fe)">@oseo/web</span></strong> — React 18 + Vite 6 SPA. Builds into <code>/public</code> at workspace root.</li>
-        <li><strong>Workspace orchestrator</strong> — <code>scripts/dev.sh</code> + the root <code>package.json</code> scripts.</li>
+        <li><strong>Workspace orchestrator</strong> — <code>start.sh</code> at the workspace root + the root <code>package.json</code> scripts.</li>
       </ul>
 
       <h2 id="runtime">2. Runtime topology</h2>
@@ -178,7 +178,7 @@
    ├── <span class="arrow">/*</span>        → SPA fallback (serves <code>public/index.html</code>)
    └── <span class="arrow">/assets/*</span>  → static hashed bundles from <code>public/</code>
 
-<span class="box-fe">[ Frontend ]</span> Vite dev server  ── serves (only via <code>pnpm dev:sh</code>)
+<span class="box-fe">[ Frontend ]</span> Vite dev server  ── serves (only via <code>pnpm start:sh</code>)
 <span class="arrow">  http://localhost:5173/ ─────────────────────────────────────►</span>
    ├── <span class="arrow">/api/*</span>     → proxied to backend on :7437
    ├── <span class="arrow">/*</span>        → React SPA from <code>packages/web/src/</code>
@@ -305,7 +305,7 @@ $ cd packages/api &amp;&amp; node dist/index.js serve</code></pre>
 
       <h2 id="logs">9. Dev orchestrator logs</h2>
       <p>
-        <code>scripts/dev.sh</code> writes each child's output into
+        <code>start.sh</code> writes each child's output into
         <code>.logs/dev/backend.log</code> and <code>.logs/dev/frontend.log</code>
         and pipes it to the terminal with a colour-tagged prefix:
       </p>

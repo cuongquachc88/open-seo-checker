@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 /**
  * Dashboard SPA end-to-end checks. These tests assume the backend is
  * already running (PN_BOOT=1 enables the webServer config to spawn
- * `pnpm dev:sh` automatically).
+ * `pnpm start:sh` automatically).
  */
 test.describe('Dashboard SPA', () => {
   test('renders the home page with the brand mark', async ({ page }) => {

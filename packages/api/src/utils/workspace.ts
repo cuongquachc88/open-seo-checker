@@ -10,7 +10,7 @@
  *   pnpm --filter @oseo/api serve              -> cwd = workspace root
  *   pnpm --filter @oseo/api exec oseo serve    -> cwd = workspace root
  *   tsx src/index.ts                           -> cwd = workspace root
- *   scripts/dev.sh wrapper                     -> cwd = workspace root
+ *   ./start.sh wrapper                        -> cwd = workspace root
  *
  * To stay robust across these variants (and survive future changes to
  * pnpm's cwd handling), resolve the workspace root by walking upward from

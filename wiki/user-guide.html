@@ -182,7 +182,7 @@ $ pnpm server                 # production: API + SPA on :7437</code></pre>
           <p>Single port <code>:7437</code>, serves the API and the dashboard SPA, auto-opens Chrome. Best for one-time audits.</p>
         </div>
         <div>
-          <h4>Dev orchestrator <code>pnpm dev:sh</code></h4>
+          <h4>Dev orchestrator <code>pnpm start:sh</code></h4>
           <p>Big ASCII banner, colour-tagged backend &amp; frontend logs, readiness probes, Ctrl+C graceful shutdown. Best while iterating.</p>
         </div>
         <div>
@@ -191,11 +191,11 @@ $ pnpm server                 # production: API + SPA on :7437</code></pre>
         </div>
         <div>
           <h4>Second-screen monitor</h4>
-          <p><code>pnpm monitor</code> runs alongside <code>pnpm dev:sh</code> in a separate terminal to keep an eye on the log streams without scrolling.</p>
+          <p><code>pnpm monitor</code> runs alongside <code>pnpm start:sh</code> in a separate terminal to keep an eye on the log streams without scrolling.</p>
         </div>
       </div>
       <p>
-        When <code>pnpm dev:sh</code> is up, the orchestrator prints a colour
+        When <code>pnpm start:sh</code> is up, the orchestrator prints a colour
         table that pins the role (backend / frontend) to its port with a
         bright accent. The backend dot is <span style="color:var(--be); font-weight:bold;">● blue</span>,
         the frontend dot is <span style="color:var(--fe); font-weight:bold;">● magenta</span>.

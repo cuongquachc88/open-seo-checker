@@ -8,7 +8,7 @@ import { defineConfig } from '@playwright/test';
  *
  *   pnpm server        (production build, single port)
  *   #  or
- *   pnpm dev:sh        (orchestrator + dev proxy on :5173)
+ *   pnpm start:sh      (orchestrator + dev proxy on :5173)
  *
  * then run:
  *
@@ -16,7 +16,7 @@ import { defineConfig } from '@playwright/test';
  *
  * In CI, you can let Playwright manage the server itself by setting
  * PW_BOOT=1 in the environment; it will then call
- * scripts/dev.sh before the suite starts and tear it down at the end.
+ * ./start.sh before the suite starts and tear it down at the end.
  */
 const useWebServer = process.env.PW_BOOT === '1';
 
@@ -44,10 +44,10 @@ export default defineConfig({
   ],
   webServer: useWebServer
     ? {
-        // pnpm dev:sh orchestrates both backend (Hono on :7437) and
+        // pnpm start:sh orchestrates both backend (Hono on :7437) and
         // frontend (Vite on :5173). It also installs playwright
         // chromium on first run, so the e2e environment is ready.
-        command: 'pnpm dev:sh',
+        command: 'pnpm start:sh',
         url: 'http://localhost:7437/api/runs',
         reuseExistingServer: !process.env.CI,
         timeout: 60_000,

@@ -31,7 +31,7 @@ pnpm install
 pnpm build && pnpm server
 
 # Or the dev orchestrator with live reload + bright banner:
-pnpm dev:sh
+pnpm start:sh          # alias: pnpm dev:sh
 
 # Or just the one-click launcher that auto-builds + opens Chrome:
 ./open-seo-checker.sh        # macOS / Linux
@@ -40,12 +40,12 @@ open-seo-checker.bat         # Windows
 
 The dashboard is served at `http://localhost:7437`. The dev orchestrator also
 boots Vite on `http://localhost:5173` with `/api` proxied to the backend so
-HMR works in the browser (`pnpm dev:sh`):
+HMR works in the browser (`pnpm start:sh`):
 
 | Origin                | Role                                            |
 |-----------------------|-------------------------------------------------|
 | `http://localhost:7437` | Hono API + dashboard SPA built to `/public/` |
-| `http://localhost:5173` | Vite dev server (only when `pnpm dev:sh`)    |
+| `http://localhost:5173` | Vite dev server (only when `pnpm start:sh`)  |
 
 ## CLI Commands
 
@@ -129,12 +129,12 @@ Root scripts (`package.json`):
 | `pnpm dev`               | `concurrently` running both `dev:api` and `dev:web`        |
 | `pnpm dev:api`           | tsx watch backend (Hono) only, with auto-restart          |
 | `pnpm dev:web`           | Vite dev server with HMR, proxies /api to the backend    |
-| `pnpm dev:sh`            | `bash scripts/dev.sh` — print banner + colour-tagged BE+FE logs + readiness probes + role layout |
+| `pnpm dev:sh` / `start:sh` | `bash ./start.sh` — print banner + colour-tagged BE+FE logs + readiness probes + role layout + Node/pnpm auto-install |
 | `pnpm monitor`           | `bash scripts/monitor.sh` — second-screen tailer          |
 | `pnpm server`            | `pnpm --filter @oseo/api start` — run compiled API         |
 | `pnpm crawl`             | `pnpm --filter @oseo/api crawl`  — run a single-shot crawl|
 | `pnpm test:unit`         | vitest unit suite in `packages/api`                       |
-| `pnpm test:e2e`          | Playwright e2e suite (needs a running server; set `PW_BOOT=1` to spin up `pnpm dev:sh` itself) |
+| `pnpm test:e2e`          | Playwright e2e suite (needs a running server; set `PW_BOOT=1` to spin up `pnpm start:sh` itself) |
 | `pnpm lint`              | `pnpm -r --filter './packages/*' lint`                   |
 
 Inside each package the same scripts work via `pnpm --filter @oseo/api ...` /
@@ -222,7 +222,7 @@ Two test layers:
 pnpm test:unit        # 26 vitest specs in packages/api/src/__tests__
 pnpm test:e2e         # 23 Playwright specs under tests/e2e/
 
-# Self-bootstrapping — also spins up `pnpm dev:sh`:
+# Self-bootstrapping — also spins up `pnpm start:sh`:
 PW_BOOT=1 pnpm test:e2e
 ```
 
