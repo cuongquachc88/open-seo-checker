@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Open SEO Checker · Architecture</title>
+  <style>
+    :root {
+      --bg: #0b0f1a;
+      --panel: #111827;
+      --panel-2: #1f2937;
+      --text: #e5e7eb;
+      --muted: #94a3b8;
+      --brand-1: #3b82f6;
+      --brand-2: #8b5cf6;
+      --be: #60a5fa;
+      --fe: #d8b4fe;
+      --green: #34d399;
+      --yellow: #fbbf24;
+      --red: #f87171;
+      --border: #1f2937;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.65;
+    }
+    .layout { display: grid; grid-template-columns: 240px 1fr; max-width: 1200px; margin: 0 auto; }
+    aside {
+      border-right: 1px solid var(--border);
+      padding: 24px 0;
+      position: sticky;
+      top: 0;
+      align-self: start;
+      height: 100vh;
+      overflow-y: auto;
+    }
+    aside h1 { font-size: 18px; margin: 0 24px 16px; }
+    aside h1 .grad {
+      background: linear-gradient(90deg, var(--fe), var(--brand-2));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    aside nav a {
+      display: block;
+      padding: 6px 24px;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 13px;
+      border-left: 2px solid transparent;
+    }
+    aside nav a:hover { color: var(--text); border-left-color: var(--brand-1); }
+    aside .back {
+      margin: 24px;
+      padding: 10px 12px;
+      background: rgba(216,180,254,0.08);
+      border: 1px solid rgba(216,180,254,0.25);
+      border-radius: 6px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    main { padding: 32px 48px 96px; max-width: 820px; }
+    h2 {
+      margin: 40px 0 12px;
+      font-size: 24px;
+      letter-spacing: -0.01em;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+    h3 { margin: 24px 0 8px; font-size: 17px; }
+    p, ul, ol { color: var(--text); }
+    code, kbd {
+      font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+      background: var(--panel-2);
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+      color: var(--text);
+    }
+    pre {
+      background: var(--panel-2);
+      padding: 16px 18px;
+      border-radius: 8px;
+      overflow: auto;
+      border: 1px solid var(--border);
+      font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+    .diagram {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px 20px;
+      margin: 18px 0 28px;
+      font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+      font-size: 13px;
+      line-height: 1.5;
+      white-space: pre;
+      overflow-x: auto;
+    }
+    .diagram .box-be { color: var(--be); }
+    .diagram .box-fe { color: var(--fe); }
+    .diagram .box-c   { color: var(--green); }
+    .diagram .arrow   { color: var(--muted); }
+    .callout {
+      border-left: 3px solid var(--brand-1);
+      background: rgba(59,130,246,0.07);
+      padding: 12px 16px;
+      border-radius: 0 8px 8px 0;
+      margin: 16px 0;
+      color: var(--text);
+      font-size: 14px;
+    }
+    .grid {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: repeat(2, 1fr);
+      margin: 18px 0 28px;
+    }
+    .grid > div {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px 18px;
+    }
+    .grid strong { color: var(--text); }
+    .grid p { color: var(--muted); margin: 4px 0 0; font-size: 13px; }
+    table { width: 100%; border-collapse: collapse; margin: 16px 0 32px; font-size: 14px; }
+    th, td {
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+    }
+    th { color: var(--muted); font-weight: 600; text-transform: uppercase; font-size: 11px; letter-spacing: 0.08em; }
+    a { color: var(--brand-1); }
+
+    @media (max-width: 920px) { .grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside>
+      <h1>OSEO <span class="grad">Architecture</span></h1>
+      <nav>
+        <a href="#overview">1. Overview</a>
+        <a href="#runtime">2. Runtime topology</a>
+        <a href="#dataflow">3. Data flow</a>
+        <a href="#crawler">4. Crawl pipeline</a>
+        <a href="#redirects">5. Redirect chain</a>
+        <a href="#storage">6. SQLite schema</a>
+        <a href="#frontend">7. SPA boot</a>
+        <a href="#workspace">8. Workspace resolver</a>
+        <a href="#logs">9. Dev orchestrator logs</a>
+        <a href="#adrs">10. Decision log</a>
+      </nav>
+      <div class="back"><a href="index.html">← Wiki index</a></div>
+    </aside>
+    <main>
+      <h2 id="overview">1. Overview</h2>
+      <p>
+        Open SEO Checker is a single-process auditor that ships as a pnpm
+        workspace with two real packages and a thin orchestrator at the root.
+        One port is the production contract; the dev workflow adds a second.
+      </p>
+      <ul>
+        <li><strong><span style="color:var(--be)">@oseo/api</span></strong> — Hono + better-sqlite3, exposes the <code>oseo</code> CLI + REST API + SPA fallback.</li>
+        <li><strong><span style="color:var(--fe)">@oseo/web</span></strong> — React 18 + Vite 6 SPA. Builds into <code>/public</code> at workspace root.</li>
+        <li><strong>Workspace orchestrator</strong> — <code>scripts/dev.sh</code> + the root <code>package.json</code> scripts.</li>
+      </ul>
+
+      <h2 id="runtime">2. Runtime topology</h2>
+      <div class="diagram"><span class="box-be">[ Backend ]</span>  Hono + SQLite  ── serves
+<span class="arrow">  http://localhost:7437/ ─────────────────────────────────────►</span>
+   ├── <span class="arrow">/api/*</span>     → REST endpoints
+   ├── <span class="arrow">/*</span>        → SPA fallback (serves <code>public/index.html</code>)
+   └── <span class="arrow">/assets/*</span>  → static hashed bundles from <code>public/</code>
+
+<span class="box-fe">[ Frontend ]</span> Vite dev server  ── serves (only via <code>pnpm dev:sh</code>)
+<span class="arrow">  http://localhost:5173/ ─────────────────────────────────────►</span>
+   ├── <span class="arrow">/api/*</span>     → proxied to backend on :7437
+   ├── <span class="arrow">/*</span>        → React SPA from <code>packages/web/src/</code>
+   └── <span class="arrow">HMR</span>        → live edits without reload</div>
+      <p>
+        Production boots a single Node process with both responsibilities; the
+        dev workflow splits them so HMR survives backend restarts.
+      </p>
+
+      <h2 id="dataflow">3. Data flow</h2>
+      <div class="diagram">  Browser                                 Backend
+  ────────                              ────────
+  React SPA   ────── <code>GET /api/runs</code> ───────►   Hono route
+   ▲           ◄───── JSON runs ───────   <code>getAllRuns()</code>
+   │                                       (<code>SELECT * FROM crawl_runs ...</code>)
+   │
+  React SPA   ────── <code>POST /api/crawl</code> ─────►   Hono route
+   ▲           ◄───── JSON progress ───   <code>CrawlEngine</code> → SQLite <code>crawl_runs.db</code>
+   │ WSS                                       (<code>fetchHtml()</code>, analyzer, …)
+   │ (optional)
+
+  React SPA   ────── <code>GET /api/crawl/:id/issues</code>  ─►   <code>getIssues()</code>
+   ▲           ◄───── JSON issues ─────    issues table → UI tab
+</div>
+      <p>
+        Long-running crawls publish progress over the same HTTP channel
+        (poll on <code>/api/crawl/:id/status</code>); a websocket bridge is
+        optional and only used when the SPA requests it.
+      </p>
+
+      <h2 id="crawler">4. Crawl pipeline</h2>
+      <div class="diagram">  <span class="box-c">[1]</span> Seed  URL → <span class="box-c">[2]</span> <code>FRONTIER</code> queue
+           │
+           ▼
+  <span class="box-c">[3]</span> <code>fetcher.fetchSingleHop(url)</code>  (recursive + cycle-detect)
+           │
+           ▼
+  <span class="box-c">[4]</span> <code>Parser.parseHtml(body)</code>
+    ├── title, meta, headings, h1, h1-count
+    ├── canonical, robots, hreflang
+    ├── links (internal/external)
+    ├── images (alt / dim / size)
+    └── JSON-LD blocks
+           │
+           ▼
+  <span class="box-c">[5]</span> URL stored in SQLite (<code>urls</code> table)
+           │
+           ▼
+  <span class="box-c">[6]</span> Each <code>analyzers/*</code> runs for the run id:
+    analyzeTitles → <code>issues</code>
+    analyzeMeta   → <code>issues</code>
+    analyzeHeadings → <code>issues</code>
+    analyzeLinks  → <code>issues</code>
+    analyzeImages → <code>issues</code>
+    …</div>
+
+      <h2 id="redirects">5. Redirect chain</h2>
+      <p>
+        <code>fetcher.fetchSingleHop()</code> recurses up to 10 hops with
+        cycle detection on a per-host basis. The final response carries:
+      </p>
+      <ul>
+        <li><strong><code>redirectChain</code></strong> — every URL we visited before getting a non-3xx response.</li>
+        <li><strong><code>redirectUrl</code></strong> — the hop that ended the chain (often <code>301 → 200</code>).</li>
+        <li><strong><code>normalizedUrl</code></strong> — the address we ultimately parsed.</li>
+      </ul>
+      <p>
+        The engine stores <em>one</em> row per logical resource: the row's
+        <code>address</code> is the resolved one, so duplicate detection
+        (titles, meta descriptions) sees the canonical target. The chain
+        itself is preserved as metadata so the UI can render a "redirects to"
+        badge.
+      </p>
+      <div class="callout">
+        An earlier version of this code treated the 3xx body as the
+        destination, which caused crawls to "see" exactly one row for many
+        real-world sites. The recursive fetcher fixes it.
+      </div>
+
+      <h2 id="storage">6. SQLite schema</h2>
+      <p>The api opens a single database per crawl run and threads queries there.</p>
+      <table>
+        <thead><tr><th>Table</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td><code>crawl_runs</code></td><td>One row per audit. Holds <code>startUrl</code>, <code>status</code>, <code>started_at</code>, JSON <code>config</code> and <code>db_path</code>.</td></tr>
+          <tr><td><code>urls</code></td><td>One row per URL found. Holds status, title, meta description, headings, image counts, redirect chain, linked-by, linked-to.</td></tr>
+          <tr><td><code>links</code></td><td>Edges between URLs. <code>source_url_id</code> → <code>target_url_id</code> with anchor text + rel attributes.</td></tr>
+          <tr><td><code>images</code></td><td>Image embeddings: src url, alt, width, height, size, status code.</td></tr>
+          <tr><td><code>issues</code></td><td>One row per analyzer finding. Queryable by category, priority, status.</td></tr>
+        </tbody>
+      </table>
+      <p>
+        Indexes live on <code>urls.crawl_run_id + status_category</code>,
+        <code>issues.crawl_run_id + type</code>, plus
+        <code>links.crawl_run_id + source_url_id</code> &mdash; the
+        heaviest queries (issue counts, URL list filters) hit the index
+        path.
+      </p>
+
+      <h2 id="frontend">7. SPA boot</h2>
+      <ol>
+        <li>Browser opens <code>/</code>; Hono falls back to <code>public/index.html</code>.</li>
+        <li>React mounts into <code>#root</code>; the new <code>AppLayout</code> renders the shell (sidebar + topbar + main).</li>
+        <li>Route resolution happens client-side via <code>react-router-dom</code>; no server round-trip for navigation.</li>
+        <li>Each page issues its own <code>useApi()</code> requests &mdash; one per page, not one global query.</li>
+        <li>API responses render until the next refresh; <code>useInterval</code> keeps a couple of pages (Dashboard, Overview) re-polling.</li>
+      </ol>
+
+      <h2 id="workspace">8. Workspace resolver</h2>
+      <p>
+        The api binary may be launched from many cwds:
+      </p>
+      <pre><code>$ node packages/api/dist/index.js serve   # workspace root
+$ oseo serve                                # pnpm --filter @oseo/api start
+$ cd packages/api &amp;&amp; node dist/index.js serve</code></pre>
+      <p>
+        To stay robust, <code>packages/api/src/utils/workspace.ts</code>
+        walks <em>upward</em> from <code>process.cwd()</code> looking for
+        <code>pnpm-workspace.yaml</code>. Every runtime path
+        (<code>public/</code>, <code>crawls/</code>, <code>exports/</code>,
+        <code>tokens.json</code>) flows through that helper, so the api
+        resolves the same way no matter how it's launched.
+      </p>
+
+      <h2 id="logs">9. Dev orchestrator logs</h2>
+      <p>
+        <code>scripts/dev.sh</code> writes each child's output into
+        <code>.logs/dev/backend.log</code> and <code>.logs/dev/frontend.log</code>
+        and pipes it to the terminal with a colour-tagged prefix:
+      </p>
+      <pre><code>[backend]  > @oseo/api@0.1.0 dev
+[backend]  > tsx watch src/index.ts serve
+[backend]
+[backend]  +========================================================================+
+[backend]  |   ____  ...  O P E N   S E O   C H E C K E R                          |
+[backend]  +========================================================================+
+[backend]    ●  BACKEND  x Hono + SQLite
+[backend]    v0.1.0    ▶ listening on http://localhost:7437
+
+[frontend] > @oseo/web@0.1.0 dev
+[frontend] > vite
+[frontend]   VITE  v6.4.3  ready in 246 ms
+[frontend]   ➜  Local:   http://localhost:5173/</code></pre>
+      <p>
+        From another terminal you can run
+        <code>pnpm monitor</code> (which calls
+        <code>scripts/monitor.sh</code>) to keep an eye on those same
+        logs without scrolling through a hot test session.
+      </p>
+
+      <h2 id="adrs">10. Decision log</h2>
+      <div class="grid">
+        <div>
+          <strong>Why pnpm workspaces?</strong>
+          <p>Single install + hoisted devDeps keep the api lean and avoid cross-package node_modules drift. <code>pnpm-workspace.yaml</code> declares both packages; the root owns scripts only.</p>
+        </div>
+        <div>
+          <strong>Why Hono, not Express?</strong>
+          <p>Composability (typed routes, middleware as functions) and edge-deploy compatible. SQLite-via-better-sqlite3 gives us Node-side analytical queries in &lt; 200 ms.</p>
+        </div>
+        <div>
+          <strong>Why recursive fetcher, not undici maxRedirections?</strong>
+          <p>Unreachable for the chromium step; we needed cycle detection and the full chain to show up in the UI as one row per logical destination.</p>
+        </div>
+        <div>
+          <strong>Why natural page scroll, not viewport-locked layout?</strong>
+          <p>Playwright's <code>fullPage</code> captures the whole document; locking <code>&lt;main&gt;</code> into its own scroll container produced "blank bottom" screenshots for everyone debugging report images.</p>
+        </div>
+        <div>
+          <strong>Why AIProvider catalogue in the SPA, not just the API?</strong>
+          <p>Provider key + active selection live in browser local storage because the dashboard is single-tenant local-first. The api only sees whatever the request carries.</p>
+        </div>
+        <div>
+          <strong>Why atomic feature-grouped commits?</strong>
+          <p>Each change is a tiny, reviewable story. <code>git reset --mixed HEAD~1</code> + restage is faster than rewriting history when a commit accidentally mixes concerns.</p>
+        </div>
+      </div>
+
+      <p style="margin-top: 48px; color: var(--muted); font-size: 13px;">
+        <a href="user-guide.html">→ User Guide</a> &nbsp;·&nbsp;
+        <a href="dev-guide.html">→ Dev Guide</a> &nbsp;·&nbsp;
+        <a href="index.html">↑ Index</a>
+      </p>
+    </main>
+  </div>
+</body>
+</html>

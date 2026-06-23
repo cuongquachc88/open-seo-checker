@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Open SEO Checker · Developer Guide</title>
+  <style>
+    :root {
+      --bg: #0b0f1a;
+      --panel: #111827;
+      --panel-2: #1f2937;
+      --text: #e5e7eb;
+      --muted: #94a3b8;
+      --brand-1: #3b82f6;
+      --brand-2: #8b5cf6;
+      --be: #60a5fa;
+      --fe: #d8b4fe;
+      --green: #34d399;
+      --yellow: #fbbf24;
+      --red: #f87171;
+      --border: #1f2937;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.65;
+    }
+    .layout { display: grid; grid-template-columns: 240px 1fr; max-width: 1200px; margin: 0 auto; }
+    aside {
+      border-right: 1px solid var(--border);
+      padding: 24px 0;
+      position: sticky;
+      top: 0;
+      align-self: start;
+      height: 100vh;
+      overflow-y: auto;
+    }
+    aside h1 { font-size: 18px; margin: 0 24px 16px; }
+    aside h1 .grad {
+      background: linear-gradient(90deg, var(--be), var(--brand-2));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    aside nav a {
+      display: block;
+      padding: 6px 24px;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 13px;
+      border-left: 2px solid transparent;
+    }
+    aside nav a:hover { color: var(--text); border-left-color: var(--brand-1); }
+    aside .back {
+      margin: 24px;
+      padding: 10px 12px;
+      background: rgba(96,165,250,0.08);
+      border: 1px solid rgba(96,165,250,0.25);
+      border-radius: 6px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    main { padding: 32px 48px 96px; max-width: 820px; }
+    h2 {
+      margin: 40px 0 12px;
+      font-size: 24px;
+      letter-spacing: -0.01em;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+    h3 { margin: 24px 0 8px; font-size: 17px; }
+    p, ul, ol { color: var(--text); }
+    code, kbd {
+      font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+      background: var(--panel-2);
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+      color: var(--text);
+    }
+    pre {
+      background: var(--panel-2);
+      padding: 16px 18px;
+      border-radius: 8px;
+      overflow: auto;
+      border: 1px solid var(--border);
+      font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+    .callout {
+      border-left: 3px solid var(--brand-1);
+      background: rgba(59,130,246,0.07);
+      padding: 12px 16px;
+      border-radius: 0 8px 8px 0;
+      margin: 16px 0;
+      color: var(--text);
+      font-size: 14px;
+    }
+    .callout.warn  { border-left-color: var(--yellow); background: rgba(251, 191, 36, 0.07); }
+    .callout.danger{ border-left-color: var(--red);   background: rgba(248, 113, 113, 0.07); }
+    table { width: 100%; border-collapse: collapse; margin: 16px 0 32px; font-size: 14px; }
+    th, td {
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+    }
+    th { color: var(--muted); font-weight: 600; text-transform: uppercase; font-size: 11px; letter-spacing: 0.08em; }
+    td code { font-size: 12px; }
+    a { color: var(--brand-1); }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside>
+      <h1>OSEO <span class="grad">Developer Guide</span></h1>
+      <nav>
+        <a href="#setup">1. Setup</a>
+        <a href="#layout">2. Monorepo layout</a>
+        <a href="#backend">3. Adding a backend analyzer</a>
+        <a href="#frontend">4. Adding frontend route</a>
+        <a href="#ai-providers">5. AI provider</a>
+        <a href="#cli">6. CLI command</a>
+        <a href="#unit">7. Vitest unit</a>
+        <a href="#e2e">8. Playwright e2e</a>
+        <a href="#release">9. Release</a>
+        <a href="#style">10. Code style</a>
+      </nav>
+      <div class="back"><a href="index.html">← Wiki index</a></div>
+    </aside>
+    <main>
+      <h2 id="setup">1. Setup</h2>
+      <pre><code>$ pnpm install
+$ pnpm --filter @oseo/api dev     # tsx watch backend at :7437
+$ pnpm --filter @oseo/web dev     # vite dev server at :5173
+$ pnpm dev:sh                     # both at once, with banner
+
+# Quality
+$ pnpm test:unit                  # vitest unit suite (api)
+$ pnpm test:e2e                   # playwright spec (needs a server)
+$ PW_BOOT=1 pnpm test:e2e         # spawn dev:sh, run, teardown</code></pre>
+
+      <h2 id="layout">2. Monorepo layout</h2>
+      <table>
+        <thead><tr><th>Path</th><th>Owner</th><th>What lives there</th></tr></thead>
+        <tbody>
+          <tr><td><code>packages/api/src/analyzer/</code></td><td>api</td><td>Pure SEO checks: titles, meta, headings, links, security ...</td></tr>
+          <tr><td><code>packages/api/src/crawler/</code></td><td>api</td><td>Engine, fetcher, parser, links, robots, log analyzer</td></tr>
+          <tr><td><code>packages/api/src/integrations/</code></td><td>api</td><td>One file per third-party API (GA4, GSC, PSI, Majestic, Ahrefs, Moz)</td></tr>
+          <tr><td><code>packages/api/src/ai/</code></td><td>api</td><td>One file per LLM provider</td></tr>
+          <tr><td><code>packages/api/src/server/app.ts</code></td><td>api</td><td>Hono app, REST routes, SPA fallback</td></tr>
+          <tr><td><code>packages/api/src/storage/database.ts</code></td><td>api</td><td>SQLite schema, prepared statements, transactions</td></tr>
+          <tr><td><code>packages/api/src/utils/workspace.ts</code></td><td>api</td><td>Resolves <code>public/</code>, <code>crawls/</code>, <code>exports/</code> relative to the workspace root</td></tr>
+          <tr><td><code>packages/web/src/components/&lt;page&gt;/</code></td><td>web</td><td>One folder per dashboard page</td></tr>
+          <tr><td><code>packages/web/src/components/ui/</code></td><td>web</td><td>shadcn-style primitives (button, card, sheet, tabs, ...)</td></tr>
+          <tr><td><code>packages/web/src/lib/api.ts</code></td><td>web</td><td>API client wrapping the Hono endpoints</td></tr>
+          <tr><td><code>packages/web/src/lib/ai-settings.ts</code></td><td>web</td><td>Provider catalogue + localStorage helpers</td></tr>
+          <tr><td><code>scripts/dev.sh</code></td><td>workspace</td><td>Big banner + BE+FE orchestrator with readiness probes</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">
+        The orchestrator at the workspace root owns only the cross-cutting
+        concerns (scripts, playwright config, tsconfig.base.json, pnpm-
+        workspace.yaml). Runtime deps live in the package that needs them.
+      </div>
+
+      <h2 id="backend">3. Adding a backend analyzer</h2>
+      <ol>
+        <li>Add <code>packages/api/src/analyzer/my-new-check.ts</code>. Export a function named <code>analyzeMyNewCheck(runId: number): void</code>.</li>
+        <li>Read URLs with <code>getUrls(runId, { isInternal: true })</code> and produce an array of <code>CrawlIssue</code> objects.</li>
+        <li>Call <code>insertIssues(runId, issues)</code> at the end.</li>
+        <li>Export <code>analyzeMyNewCheck</code> from <code>packages/api/src/analyzer/index.ts</code>.</li>
+        <li>Wire it from the engine after the URL has all the metadata you need (see <code>packages/api/src/crawler/engine.ts</code>).</li>
+        <li>Add a vitest spec under <code>packages/api/src/__tests__/analyzer-my-check.test.ts</code>. The shared fixture opens a temp SQLite for you, so just call your analyzer and read <code>issues</code>.</li>
+      </ol>
+      <p>Convention: issues are categorised by a single-word slug used in the dashboard's filter chips (<code>page-titles</code>, <code>headings</code>, ...).</p>
+
+      <h2 id="frontend">4. Adding frontend route</h2>
+      <ol>
+        <li>Create <code>packages/web/src/pages/MyNewPage.tsx</code>. Use the existing shared components — <code>Card</code>, <code>Button</code>, <code>useApi</code> — wherever you can.</li>
+        <li>Add the route inside the <code>App.tsx</code> router.</li>
+        <li>If the route is per-run, add a sidebar sub-entry in <code>sidebar.tsx</code> so power users can reach it via keyboard navigation.</li>
+        <li>Add a Playwright spec that loads the route directly via <code>page.goto()</code> and asserts no console errors. The existing suite in <code>tests/e2e/spa-routes.spec.ts</code> is your template.</li>
+      </ol>
+      <div class="callout warn">
+        Avoid mutating local storage directly in handlers. Use the
+        equivalent helper under <code>lib/</code> (e.g.
+        <code>loadApiKeys()</code>, <code>saveAiSettings()</code>) — that
+        way the persistence shape and the migration list live in one place.
+      </div>
+
+      <h2 id="ai-providers">5. AI provider</h2>
+      <ol>
+        <li>Add <code>packages/api/src/ai/my-provider.ts</code> exporting a function with the signature:<br>
+        <code>export interface AiCall { provider: string; model: string; prompt: string; apiKey: string; }</code><br>
+        Implement async <code>call(req: AiCall): Promise&lt;string&gt;</code>.</li>
+        <li>Register the provider in <code>packages/api/src/ai/index.ts</code> alongside the existing ones.</li>
+        <li>Add the provider entry to <code>AI_PROVIDERS</code> in <code>packages/web/src/lib/ai-settings.ts</code> so the dropdown in <strong>Settings</strong> knows about it.</li>
+        <li>Settings → Insights will work end-to-end with no further changes.</li>
+      </ol>
+
+      <h2 id="cli">6. CLI command</h2>
+      <ol>
+        <li>Add <code>packages/api/src/cli/commands/my-cmd.ts</code> with a Commander definition.</li>
+        <li>Register it from <code>packages/api/src/cli/index.ts</code>.</li>
+        <li>Print a banner via <code>printRoleBanner({ role: 'mycmd', stack: '...' })</code> so users see the role-coded identity on every invocation.</li>
+        <li>For workflow commands, use <code>printOk / printWarn / printError / printBullet</code> helpers from <code>cli/banner.ts</code>.</li>
+      </ol>
+
+      <h2 id="unit">7. Vitest unit suite</h2>
+      <p>
+        The vitest config lives at <code>packages/api/vitest.config.ts</code>.
+        The shared test fixture (<code>packages/api/src/__tests__/setup.ts</code>)
+        opens a temporary SQLite database in <code>os.tmpdir()</code>, creates a
+        single crawler run, and exposes helpers:
+      </p>
+      <pre><code>import { describe, expect, it } from 'vitest';
+import { analyzeTitles } from '../analyzer/titles.js';
+import { makeRun, makeUrl, query } from './setup.js';
+
+it('flags missing titles', () => {
+  const run = makeRun('missing-title');
+  makeUrl(run.id!, { address: 'https://example.com/no-title' });
+
+  analyzeTitles(run.id!);
+
+  const issues = query('SELECT type FROM issues WHERE crawl_run_id = ?', [run.id]);
+  expect(issues.map(i =&gt; i.type)).toContain('missing_title');
+});</code></pre>
+      <p>
+        <strong>Always</strong> write a unit spec per analyzer. The benchmarks
+        don't run in CI by default, but the tool's correctness depends on
+        the analyzer emitting the documented issues. If you change an analyzer,
+        first run <code>pnpm test:unit</code> and update its tests.
+      </p>
+
+      <h2 id="e2e">8. Playwright e2e suite</h2>
+      <p>
+        The e2e config is at the workspace root
+        (<code>playwright.config.ts</code>). Specs live under
+        <code>tests/e2e/</code>. The suite assumes a server is bound on
+        <code>:7437</code>; in CI you'd set <code>PW_BOOT=1</code> to
+        spawn <code>pnpm dev:sh</code> automatically.
+      </p>
+      <p>Three categories today:</p>
+      <ul>
+        <li><strong>API smoke</strong> — direct <code>request</code> calls to <code>/api/*</code>.</li>
+        <li><strong>Dashboard SPA</strong> — pull up the home page, click through navigation, count console errors.</li>
+        <li><strong>SPA routes</strong> — parametrised loop that touches every top-level route.</li>
+      </ul>
+      <p>
+        When adding a new top-level route, append it to the loop in
+        <code>spa-routes.spec.ts</code> to keep coverage tight.
+      </p>
+
+      <h2 id="release">9. Release</h2>
+      <ol>
+        <li>Run <code>pnpm test:unit &amp;&amp; PW_BOOT=1 pnpm test:e2e</code> locally.</li>
+        <li>Run <code>pnpm -r --filter './packages/*' build</code>.</li>
+        <li>Commit everything in atomic, feature-grouped commits (the convention in this repo).</li>
+        <li>Tag the commit with <code>git tag v0.X.Y</code> and push.</li>
+      </ol>
+      <div class="callout">
+        The user-facing check is "does the dashboard render with zero
+        console errors?" — that gets exercised by the e2e suite. Visual
+        regressions are deliberately not asserted; the brand mark +
+        sidebar are stable but new tabs will evolve.
+      </div>
+
+      <h2 id="style">10. Code style</h2>
+      <ul>
+        <li><strong>Modular packages.</strong> New boundaries live in their own file under <code>src/&lt;feature&gt;/</code>; never cross-pollute siblings.</li>
+        <li><strong>ESM everywhere.</strong> Both packages ship <code>"type": "module"</code>. Use <code>import</code> / <code>export</code> and add explicit <code>.js</code> suffixes to relative imports (TypeScript's ESM convention).</li>
+        <li><strong>Runtime &lt;=&gt; dev split.</strong> Runtime deps live in the package that uses them; the workspace root owns only <em>workspace-wide</em> devDeps (typescript, tsx, vitest, eslint, concurrently, @playwright/test).</li>
+        <li><strong>One grep-friendly constant.</strong> Paths the api runtime reads (<code>public/</code>, <code>crawls/</code>, <code>exports/</code>, <code>tokens.json</code>) all go through <code>utils/workspace.ts</code>. Don't reinvent that glob matching.</li>
+        <li><strong>Atomic commits.</strong> The repo practices "feature group per commit". If your change touches both the api and the web, split it into two commits before pushing.</li>
+      </ul>
+      <div class="callout warn">
+        Tests are part of the codebase. Don't skip them on a quick fix —
+        a vitest call is &lt; 200 ms and an e2e run is &lt; 5 s.
+      </div>
+
+      <p style="margin-top: 48px; color: var(--muted); font-size: 13px;">
+        <a href="user-guide.html">→ User Guide</a> &nbsp;·&nbsp;
+        <a href="architecture.html">→ Architecture</a> &nbsp;·&nbsp;
+        <a href="index.html">↑ Index</a>
+      </p>
+    </main>
+  </div>
+</body>
+</html>
