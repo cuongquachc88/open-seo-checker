@@ -43,19 +43,34 @@ const WORDMARK_BLOCK = [
 
 const TAGLINE = 'O P E N   S E O   C H E C K E R';
 
-/** Render the bordered ASCII banner around the wordmark + tagline. */
-function renderBanner(color: string = ANSI.cyan): string {
+/** Render the bordered ASCII banner around the wordmark + tagline.
+ *
+ *  When a `tagRow` is supplied it is rendered as a second-to-last row
+ *  inside the box — that's the place where we paint the role identity
+ *  (`●  BACKEND  ·  Hono + SQLite`) so the same wordmark reads as the
+ *  BACKEND vs FRONTEND service at a glance. */
+function renderBanner(color: string = ANSI.cyan, tagRow?: string): string {
+  const visLen = (s: string) => s.replace(/\x1b\[[0-9;]*m/g, '').length;
   const wordmarkWidths = WORDMARK_BLOCK.map(l => l.length);
-  const innerWidth = Math.max(...wordmarkWidths, TAGLINE.length);
-  const frame = `${ANSI.bold}${color}`;
-  const reset = ANSI.reset;
-  const fill = (s: string, w: number) => s.padEnd(w, ' ');
-  const horiz = `${frame}+${'='.repeat(innerWidth + 2)}+${reset}`;
-  const inner = WORDMARK_BLOCK.map(
-    l => `${frame}|${reset} ${ANSI.bold}${color}${fill(l, innerWidth)}${reset} ${frame}|${reset}`,
+  const safeTagRow = tagRow ?? '';
+  const innerWidth = Math.max(
+    ...wordmarkWidths,
+    TAGLINE.length,
+    visLen(safeTagRow),
   );
-  const sub = `${frame}|${reset} ${ANSI.dim}${color}${fill(TAGLINE, innerWidth)}${reset} ${frame}|${reset}`;
-  return [horiz, ...inner, sub, horiz].join('\n');
+  const frame = `${ANSI.bold}${color}`;
+  const fill = (s: string, w: number) =>
+    `${s}${' '.repeat(Math.max(0, w - visLen(s)))}`;
+  const horiz = `${frame}+${'='.repeat(innerWidth + 2)}+${ANSI.reset}`;
+  const inner = WORDMARK_BLOCK.map(
+    l => `${frame}|${ANSI.reset} ${ANSI.bold}${color}${fill(l, innerWidth)}${ANSI.reset} ${frame}|${ANSI.reset}`,
+  );
+  const taglineLine = `${frame}|${ANSI.reset} ${ANSI.dim}${color}${fill(TAGLINE, innerWidth)}${ANSI.reset} ${frame}|${ANSI.reset}`;
+  if (!safeTagRow) {
+    return [horiz, ...inner, taglineLine, horiz].join('\n');
+  }
+  const tagLine = `${frame}|${ANSI.reset} ${ANSI.bold}${fill(safeTagRow, innerWidth)}${ANSI.reset} ${frame}|${ANSI.reset}`;
+  return [horiz, ...inner, taglineLine, tagLine, horiz].join('\n');
 }
 
 export interface RoleBannerOptions {
@@ -85,16 +100,20 @@ export function printRoleBanner({
       : role === 'frontend' || role === 'web'
       ? ANSI.magenta
       : ANSI.cyan;
-  const dim = ANSI.dim;
-  const reset = ANSI.reset;
+  // The same wordmark gets a coloured identity strip baked into the box,
+  // so reading the banner already tells you "this is the BACKEND" or
+  // "this is the FRONTEND" without needing the extra row below.
+  const identityTag =
+    `\u25CF  ${role.toUpperCase()}  \u00B7  ${stack}`;
   const out: string[] = [];
   if (newlineBefore) out.push('');
   if (boxedRender) {
-    out.push(renderBanner(roleColor));
+    out.push(renderBanner(roleColor, `${ANSI.bold}${roleColor}${identityTag}${ANSI.reset}`));
+  } else {
+    out.push(
+      `  ${ANSI.bold}${roleColor}\u25CF${ANSI.reset}  ${ANSI.bold}${roleColor}${role.toUpperCase()}${ANSI.reset}  ${ANSI.bold}${ANSI.dim}\u00B7${ANSI.reset}  ${ANSI.bold}${stack}${ANSI.reset}`,
+    );
   }
-  out.push(
-    `  ${ANSI.bold}${roleColor}\u25CF${reset}  ${ANSI.bold}${roleColor}${role.toUpperCase()}${reset}  ${dim}x${reset} ${ANSI.bold}${stack}${reset}`,
-  );
   for (const line of lines) out.push(line);
   out.push('');
   process.stdout.write(out.join('\n'));
