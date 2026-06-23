@@ -40,8 +40,9 @@ open-seo-checker.bat         # Windows
 
 The dashboard is served at `http://localhost:7437`. The dev orchestrator also
 boots Vite on `http://localhost:5173` with `/api` proxied to the backend so
-HMR works in the browser (`pnpm start:sh`). Each role prints its own
-solid-colour ASCII banner: blue for the backend, magenta for the frontend:
+HMR works in the browser (`pnpm start:sh`). The backend and frontend
+processes each print their own solid-colour ASCII banner: blue for the
+backend, magenta for the frontend.
 
 | Origin                | Role                                            |
 |-----------------------|-------------------------------------------------|
@@ -130,7 +131,7 @@ Root scripts (`package.json`):
 | `pnpm dev`               | `concurrently` running both `dev:api` and `dev:web`        |
 | `pnpm dev:api`           | tsx watch backend (Hono) only, with auto-restart          |
 | `pnpm dev:web`           | Vite dev server with HMR, proxies /api to the backend    |
-| `pnpm dev:sh` / `start:sh` | `bash ./start.sh` — shared wordmark + colour-tagged BE+FE logs + readiness probes + role layout + Node/pnpm auto-install (each role prints its own banner) |
+| `pnpm dev:sh` / `start:sh` | `bash ./start.sh` — colour-tagged BE+FE logs + readiness probes + role layout + Node/pnpm auto-install (each role prints its own banner) |
 | `pnpm monitor`           | `bash scripts/monitor.sh` — second-screen tailer          |
 | `pnpm server`            | `pnpm --filter @oseo/api start` — run compiled API         |
 | `pnpm crawl`             | `pnpm --filter @oseo/api crawl`  — run a single-shot crawl|

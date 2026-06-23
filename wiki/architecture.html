@@ -168,7 +168,7 @@
       <ul>
         <li><strong><span style="color:var(--be)">@oseo/api</span></strong> — Hono + better-sqlite3, exposes the <code>oseo</code> CLI + REST API + SPA fallback. On startup it prints a solid-blue ASCII banner with the role label <code>BACKEND</code>.</li>
         <li><strong><span style="color:var(--fe)">@oseo/web</span></strong> — React 18 + Vite 6 SPA. Builds into <code>/public</code> at workspace root. Its Vite plugin prints a solid-magenta ASCII banner with the role label <code>FRONTEND</code> when the dev server starts.</li>
-        <li><strong>Workspace orchestrator</strong> — <code>start.sh</code> at the workspace root + the root <code>package.json</code> scripts. It prints a shared wordmark but relies on the two child processes to print their own role-coloured banners.</li>
+        <li><strong>Workspace orchestrator</strong> — <code>start.sh</code> at the workspace root + the root <code>package.json</code> scripts. It prints a short startup message and relies on the two child processes to print their own role-coloured banners.</li>
       </ul>
 
       <h2 id="runtime">2. Runtime topology</h2>
@@ -313,7 +313,11 @@ $ cd packages/api &amp;&amp; node dist/index.js serve</code></pre>
         and frontend each print their own role banner inside their process, so
         the log file captures the colour identity together with the message:
       </p>
-      <pre><code>[backend]  > @oseo/api@0.1.0 dev
+      <pre><code>Starting Open SEO Checker dev environment
+  backend  :7437  Hono + SQLite
+  frontend :5173  Vite + React
+
+[backend]  > @oseo/api@0.1.0 dev
 [backend]  > tsx watch src/index.ts serve
 [backend]
 [backend]  +========================================================================+

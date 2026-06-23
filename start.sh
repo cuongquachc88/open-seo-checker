@@ -3,7 +3,7 @@
 #  Open SEO Checker · dev orchestrator
 # -----------------------------------------------------------------------------
 #  Starts the backend (Hono + SQLite) and the frontend (Vite + React) in the
-#  same terminal, with a big banner up top and live, prefixed logs below.
+#  same terminal, with a short startup message and live, prefixed logs below.
 #  Press Ctrl+C to stop both.
 #
 #  Lives at the workspace root (`./start.sh`) so it can be launched directly
@@ -109,30 +109,13 @@ else
 fi
 
 # -----------------------------------------------------------------------------
-# Big banner
+# Startup message
 # -----------------------------------------------------------------------------
-print_banner() {
-  printf "${BOLD}${CYAN}"
-  cat <<'BLOCK'
- +========================================================================+
- |                                                                      |
- |   ____                  _____ ____ ___   _____                       |
- |  / __ \                / ___|  __/ __ \ / ____|                      |
- | | |  | |_ __   ___ _ _| (___ |__ \ ___ | (___                       |
- | | |  | | '_ \ / _ \ '_ \___ \| |/ / |__/_ \___ \                      |
- | | |__| | |_) |  __/ | | __/ / |__| | __| __/ /                      |
- |  \___\_| .__/ \___|_| |_____/|_|  |_____|\____|                      |
- |        |_|                                                           |
- |                                                                      |
- |        O P E N   S E O   C H E C K E R                               |
- |                                                                      |
- +========================================================================+
-BLOCK
-  printf "${RESET}"
-  printf "  ${DIM}A free, open-source technical-SEO auditor.${RESET}\n"
-  printf "  ${DIM}Runs both the Hono backend and the Vite frontend from one place.${RESET}\n\n"
-  printf "  ${DIM}Each role prints its own banner below \xE2\x80\x94 blue for backend, magenta for frontend.${RESET}\n"
-  printf "  ${DIM}logs below stream live  \xC2\xB7  Ctrl+C to stop both${RESET}\n\n"
+print_startup() {
+  printf "${CYAN}Starting Open SEO Checker dev environment${RESET}\n"
+  printf "  ${DIM}backend  :7437${RESET}  ${BLUE}Hono + SQLite${RESET}\n"
+  printf "  ${DIM}frontend :5173${RESET}  ${MAGENTA}Vite + React${RESET}\n"
+  printf "  ${DIM}Each role prints its own banner below. Ctrl+C stops both.${RESET}\n\n"
 }
 
 # -----------------------------------------------------------------------------
@@ -179,7 +162,7 @@ trap 'shutdown TERM' TERM
 # -----------------------------------------------------------------------------
 # Launch backend and frontend with colour-tagged live output.
 # -----------------------------------------------------------------------------
-print_banner
+print_startup
 check_port 7437 "backend"
 check_port 5173 "frontend"
 

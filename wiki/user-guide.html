@@ -183,7 +183,7 @@ $ pnpm server                 # production: API + SPA on :7437</code></pre>
         </div>
         <div>
           <h4>Dev orchestrator <code>pnpm start:sh</code></h4>
-          <p>Shared wordmark + colour-tagged backend &amp; frontend logs, readiness probes, Ctrl+C graceful shutdown. Best while iterating. The backend and frontend processes each print their own solid-colour role banner (blue BE, magenta FE).</p>
+          <p>Colour-tagged backend &amp; frontend logs, readiness probes, Ctrl+C graceful shutdown. Best while iterating. The backend and frontend processes each print their own solid-colour role banner (blue BE, magenta FE).</p>
         </div>
         <div>
           <h4>One-click launcher</h4>
@@ -200,9 +200,14 @@ $ pnpm server                 # production: API + SPA on :7437</code></pre>
         <span style="color:var(--be); font-weight:bold;">● blue</span>
         and the frontend banner is solid
         <span style="color:var(--fe); font-weight:bold;">● magenta</span>,
-        so you always know which process produced a log line.
+        so you always know which process produced a log line. The
+        orchestrator itself only prints a short startup message.
       </p>
-      <pre><code>+========================================================================+
+      <pre><code>Starting Open SEO Checker dev environment
+  backend  :7437  Hono + SQLite
+  frontend :5173  Vite + React
+
++========================================================================+
 |   ... OPEN SEO CHECKER wordmark ...                                    |
 | ●  BACKEND  ·  Hono + SQLite                                           |
 +========================================================================+
