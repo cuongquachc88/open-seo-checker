@@ -31,6 +31,11 @@ interface HealthResponse {
   breakdown: Record<string, number>;
 }
 
+interface IssueCountsResponse {
+  counts: Record<string, number>;
+  categories: Record<string, number>;
+}
+
 function statusTone(status: CrawlRun['status']): 'success' | 'warning' | 'destructive' | 'info' | 'muted' {
   switch (status) {
     case 'completed':
@@ -79,7 +84,7 @@ export function DashboardPage(): React.ReactElement {
   const latestRun = runs.data?.runs?.[0];
 
   const detail = useApi(
-    async (): Promise<[HealthResponse | null, { counts: Record<string, number> } | null]> => {
+    async (): Promise<[HealthResponse | null, IssueCountsResponse | null]> => {
       if (!latestRun?.id) return [null, null];
       const [h, c] = await Promise.all([
         api.getHealth(latestRun.id),
@@ -91,7 +96,7 @@ export function DashboardPage(): React.ReactElement {
   );
 
   const health: HealthResponse | null = detail.data?.[0] ?? null;
-  const issueCounts = detail.data?.[1]?.counts ?? null;
+  const issueCounts = detail.data?.[1] ?? null;
 
   if (runs.loading && !runs.data) {
     return <DashboardSkeleton />;
@@ -275,7 +280,8 @@ export function DashboardPage(): React.ReactElement {
               </div>
             ) : (
               <IssueBreakdownChart
-                counts={(issueCounts ?? {}) as Record<string, number>}
+                counts={issueCounts?.counts ?? {}}
+                categoryCounts={issueCounts?.categories ?? {}}
               />
             )}
           </CardContent>

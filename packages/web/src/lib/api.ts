@@ -76,7 +76,9 @@ export const api = {
   },
 
   getIssueCounts: (id: number) =>
-    http<{ counts: Record<string, number> }>(`/api/crawl/${id}/issues/counts`),
+    http<{ counts: Record<string, number>; categories: Record<string, number> }>(
+      `/api/crawl/${id}/issues/counts`,
+    ),
 
   getSitemap: (id: number) =>
     http<string>(`/api/crawl/${id}/sitemap`, {}, 'text'),

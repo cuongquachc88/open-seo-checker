@@ -191,8 +191,8 @@ export async function startServer(port: number): Promise<ServerType> {
     try {
       const run = openRunDatabase(runId);
       if (!run) return c.json({ error: 'Run not found' }, 404);
-      const counts = getIssueCounts(runId);
-      return c.json({ counts });
+      const { severity, category } = getIssueCounts(runId);
+      return c.json({ counts: severity, categories: category });
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       return c.json({ error: message }, 500);

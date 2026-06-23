@@ -5,6 +5,9 @@ import {
   CheckCircle2,
   Link2,
   Activity,
+  Map,
+  FileText,
+  ExternalLink,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { StatCard } from '@/components/dashboard/StatCard';
@@ -17,7 +20,7 @@ import type { CrawlRun } from '@/types/domain';
 interface OverviewTabProps {
   run: (CrawlRun & { config?: string; progress?: { urlsCrawled: number; urlsFound: number; errors: number; redirects: number; urlsQueued: number } | null });
   health: { score: number; issues: number; breakdown: Record<string, number> } | null;
-  counts: Record<string, number> | null;
+  counts: { counts: Record<string, number>; categories: Record<string, number> } | null;
 }
 
 export function OverviewTab({ run, health, counts }: OverviewTabProps): React.ReactElement {
@@ -68,12 +71,22 @@ export function OverviewTab({ run, health, counts }: OverviewTabProps): React.Re
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <IssueBreakdownChart counts={counts ?? {}} />
+            <IssueBreakdownChart
+              counts={counts?.counts ?? {}}
+              categoryCounts={counts?.categories ?? {}}
+            />
           </CardContent>
         </Card>
       </section>
 
-      <section className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <section className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+        <StatCard
+          label="Issues"
+          value={health?.issues ?? 0}
+          icon={Bug}
+          accent={health && health.issues > 0 ? 'destructive' : 'success'}
+          hint={health && health.issues > 0 ? 'See Issues tab' : 'No issues detected'}
+        />
         <StatCard
           label="URLs Crawled"
           value={run.urlsCrawled}
@@ -88,9 +101,9 @@ export function OverviewTab({ run, health, counts }: OverviewTabProps): React.Re
           hint={run.urlsFound > run.urlsCrawled ? `${run.urlsFound - run.urlsCrawled} queued` : 'All discovered URLs crawled'}
         />
         <StatCard
-          label="Errors"
+          label="Crawl Errors"
           value={run.errors}
-          icon={Bug}
+          icon={Activity}
           accent={run.errors > 0 ? 'destructive' : 'success'}
           delta={run.errors === 0 ? 'clean' : undefined}
         />
@@ -101,6 +114,73 @@ export function OverviewTab({ run, health, counts }: OverviewTabProps): React.Re
           accent={run.redirects > 0 ? 'warning' : 'muted'}
           hint={run.redirects > 0 ? 'Review chains' : 'No chains yet'}
         />
+      </section>
+
+      <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Map className="h-4 w-4 text-primary" /> Sitemaps
+            </CardTitle>
+            <CardDescription>
+              Sitemap URLs discovered and parsed during the crawl.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {(run.sitemapUrls?.length ?? 0) > 0 ? (
+              <ul className="space-y-2">
+                {run.sitemapUrls!.map((url) => (
+                  <li key={url} className="flex items-center gap-2 text-sm">
+                    <a
+                      href={url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-primary hover:underline truncate flex-1"
+                    >
+                      {url}
+                    </a>
+                    <ExternalLink className="h-3 w-3 text-muted-foreground shrink-0" />
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                No sitemap discovered. Enable <em>Discover via XML sitemaps</em> in the crawl settings
+                or ensure <code>/sitemap.xml</code> is available.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <FileText className="h-4 w-4 text-primary" /> robots.txt
+            </CardTitle>
+            <CardDescription>
+              Domains for which a robots.txt was fetched and respected.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {run.robotsTxt && Object.keys(run.robotsTxt).length > 0 ? (
+              <ul className="space-y-2">
+                {Object.entries(run.robotsTxt).map(([domain, content]) => (
+                  <li key={domain} className="space-y-1">
+                    <div className="text-sm font-medium">{domain}</div>
+                    <pre className="text-[10px] leading-relaxed bg-muted p-2 rounded-md overflow-auto max-h-24 font-mono">
+                      {content || '(empty file)'}
+                    </pre>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                No robots.txt was fetched. If the crawl was blocked, check that the server returns
+                a valid robots.txt file.
+              </p>
+            )}
+          </CardContent>
+        </Card>
       </section>
 
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">

@@ -45,6 +45,7 @@ export class CrawlEngine extends EventEmitter {
   private frontier: CrawlFrontier;
   private startUrl: string;
   private robotsInfo: Map<string, { content: string; crawlDelay?: number }> = new Map();
+  private sitemapUrls: string[] = [];
   private cancelled = false;
   private paused = false;
   private dbName: string;
@@ -73,13 +74,21 @@ export class CrawlEngine extends EventEmitter {
       }
     }
 
-    // Add sitemap URLs if configured
-    if (this.config.useSitemaps && this.config.sitemapUrls) {
-      for (const sitemapUrl of this.config.sitemapUrls) {
-        // Parse sitemap and add URLs (simplified - fetch and parse XML)
+    // Add sitemap URLs if configured. Also auto-discover /sitemap.xml when enabled.
+    if (this.config.useSitemaps) {
+      const sitemapCandidates = new Set<string>(this.config.sitemapUrls ?? []);
+      try {
+        const startUrlObj = new URL(this.startUrl);
+        sitemapCandidates.add(new URL('/sitemap.xml', startUrlObj).href);
+      } catch {
+        // ignore malformed startUrl
+      }
+
+      for (const sitemapUrl of sitemapCandidates) {
         try {
           const response = await fetch(sitemapUrl, { headers: { 'User-Agent': this.config.userAgent } });
           if (response.ok) {
+            this.sitemapUrls.push(sitemapUrl);
             const text = await response.text();
             const urlMatches = text.matchAll(/<loc>([^<]+)<\/loc>/g);
             for (const match of urlMatches) {
@@ -431,6 +440,16 @@ export class CrawlEngine extends EventEmitter {
     if (urls > 0) {
       runPostCrawlAnalysis(runId, this.config);
     }
+
+    // Persist discovered sitemap URLs and robots.txt content for diagnostics.
+    const robotsTxt: Record<string, string> = {};
+    for (const [domain, info] of this.robotsInfo.entries()) {
+      robotsTxt[domain] = info.content;
+    }
+    updateCrawlRun(runId, {
+      sitemapUrls: this.sitemapUrls.length > 0 ? this.sitemapUrls : undefined,
+      robotsTxt: Object.keys(robotsTxt).length > 0 ? robotsTxt : undefined,
+    });
 
     // Optional: enrich with external API integrations (GA4, GSC, PSI, etc.)
     if (this.config.apiKeys && Object.values(this.config.apiKeys).some(v => v)) {

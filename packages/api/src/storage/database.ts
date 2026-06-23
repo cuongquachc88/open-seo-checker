@@ -66,7 +66,9 @@ function initializeSchema(db: Database.Database): void {
       errors INTEGER DEFAULT 0,
       redirects INTEGER DEFAULT 0,
       blocked INTEGER DEFAULT 0,
-      db_path TEXT NOT NULL
+      db_path TEXT NOT NULL,
+      sitemap_urls TEXT,
+      robots_txt TEXT
     );
 
     CREATE TABLE IF NOT EXISTS urls (
@@ -265,6 +267,17 @@ function runMigrations(db: Database.Database): void {
   if (hasHreflang.count === 0) {
     db.exec(`ALTER TABLE links ADD COLUMN hreflang TEXT`);
   }
+
+  // Add sitemap_urls and robots_txt columns to crawl_runs for diagnostics.
+  const runColumns = ['sitemap_urls', 'robots_txt'] as const;
+  for (const column of runColumns) {
+    const hasColumn = db.prepare(
+      `SELECT COUNT(*) as count FROM pragma_table_info('crawl_runs') WHERE name = ?`
+    ).get(column) as { count: number };
+    if (hasColumn.count === 0) {
+      db.exec(`ALTER TABLE crawl_runs ADD COLUMN ${column} TEXT`);
+    }
+  }
 }
 
 let runIdCounter = 0;
@@ -314,7 +327,13 @@ export function updateCrawlRun(
     const column = key.replace(/[A-Z]/g, m => '_' + m.toLowerCase());
     if (value !== undefined) {
       fields.push(`${column} = ?`);
-      values.push(value ?? null);
+      let dbValue: string | number | null;
+      if (Array.isArray(value) || (typeof value === 'object' && value !== null)) {
+        dbValue = JSON.stringify(value);
+      } else {
+        dbValue = value ?? null;
+      }
+      values.push(dbValue);
     }
   }
 
@@ -610,11 +629,26 @@ export function updateIssue(issueId: number, updates: Partial<CrawlIssue>): void
   stmt.run(...values);
 }
 
-export function getIssueCounts(crawlRunId: number): { type: string; priority: string; count: number }[] {
+export function getIssueCounts(crawlRunId: number): { severity: Record<string, number>; category: Record<string, number> } {
   const db = getDatabase();
-  return db.prepare(
-    `SELECT type, priority, COUNT(*) as count FROM issues WHERE crawl_run_id = ? GROUP BY type, priority`
-  ).all(crawlRunId) as { type: string; priority: string; count: number }[];
+  const severityRows = db.prepare(
+    `SELECT priority, COUNT(*) as count FROM issues WHERE crawl_run_id = ? GROUP BY priority`
+  ).all(crawlRunId) as { priority: string; count: number }[];
+  const categoryRows = db.prepare(
+    `SELECT category, COUNT(*) as count FROM issues WHERE crawl_run_id = ? GROUP BY category`
+  ).all(crawlRunId) as { category: string; count: number }[];
+
+  const severity: Record<string, number> = {};
+  for (const row of severityRows) {
+    severity[row.priority] = row.count;
+  }
+
+  const category: Record<string, number> = {};
+  for (const row of categoryRows) {
+    category[row.category] = row.count;
+  }
+
+  return { severity, category };
 }
 
 export function getInlinks(crawlRunId: number, normalizedUrl: string): CrawlLink[] {
@@ -936,6 +970,8 @@ function rowToCrawlRun(row: Record<string, unknown>): CrawlRun {
     redirects: row.redirects as number,
     blocked: row.blocked as number,
     dbPath: row.db_path as string,
+    sitemapUrls: row.sitemap_urls ? JSON.parse(row.sitemap_urls as string) as string[] : undefined,
+    robotsTxt: row.robots_txt ? JSON.parse(row.robots_txt as string) as Record<string, string> : undefined,
   };
 }
 

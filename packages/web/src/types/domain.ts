@@ -129,6 +129,8 @@ export interface CrawlRun {
   errors: number;
   redirects: number;
   dbPath: string;
+  sitemapUrls?: string[];
+  robotsTxt?: Record<string, string>;
 }
 
 export interface CrawlProgressEvent {

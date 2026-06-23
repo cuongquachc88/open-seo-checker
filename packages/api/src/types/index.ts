@@ -229,6 +229,8 @@ export interface CrawlRun {
   redirects: number;
   blocked: number;
   dbPath: string;
+  sitemapUrls?: string[];
+  robotsTxt?: Record<string, string>;
 }
 
 export interface CrawlProgressEvent {

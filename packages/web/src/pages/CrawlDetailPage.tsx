@@ -299,7 +299,7 @@ function CrawlDetailContent({
             <OverviewTab
               run={run}
               health={health.data ?? null}
-              counts={counts.data?.counts ?? null}
+              counts={counts.data ?? null}
             />
           ) : null}
           {tab === 'issues' ? <IssuesTab runId={id} /> : null}
