@@ -13,22 +13,31 @@ const agent = new Agent({
 }).compose(interceptors.redirect({ maxRedirections: 0 }));
 setGlobalDispatcher(agent);
 
+type FollowRedirects = CrawlConfig['followRedirects'];
+
 export async function fetchUrl(
   url: string,
   config: CrawlConfig,
   redirectChain: string[] = []
 ): Promise<FetchResult> {
   const normalizedUrl = normalizeUrl(url);
-  const encodedUrl = encodeUrlAddress(normalizedUrl);
   const urlEncodedAddress = encodeUrlAddress(normalizedUrl);
-
   const startTime = Date.now();
-  let responseTime = 0;
 
   if (redirectChain.length > 10) {
     return createErrorResult(normalizedUrl, urlEncodedAddress, 'redirect loop', 'error');
   }
 
+  return await fetchSingleHop(normalizedUrl, urlEncodedAddress, config, redirectChain, startTime);
+}
+
+async function fetchSingleHop(
+  currentUrl: string,
+  urlEncodedAddress: string,
+  config: CrawlConfig,
+  redirectChain: string[],
+  startTime: number,
+): Promise<FetchResult> {
   try {
     const headers: Record<string, string> = {
       'User-Agent': config.userAgent || 'OpenSEOCrawler/1.0',
@@ -44,13 +53,12 @@ export async function fetchUrl(
       }
     }
 
-    const response = await request(encodedUrl, {
+    const response = await request(encodeUrlAddress(currentUrl), {
       method: 'GET',
       headers,
     });
 
-    responseTime = (Date.now() - startTime) / 1000;
-
+    const responseTime = (Date.now() - startTime) / 1000;
     const statusCode = response.statusCode;
     const statusText = getStatusText(statusCode);
     const responseHeaders = Object.fromEntries(
@@ -64,40 +72,57 @@ export async function fetchUrl(
 
     // Handle redirects manually
     if (statusCode >= 300 && statusCode < 400 && responseHeaders['location']) {
-      const redirectUrl = normalizeUrl(responseHeaders['location'], normalizedUrl);
-      if (redirectChain.includes(redirectUrl)) {
-        return createErrorResult(normalizedUrl, urlEncodedAddress, 'redirect loop', 'error', redirectChain);
+      const redirectUrl = normalizeUrl(responseHeaders['location'], currentUrl);
+      const expandedChain = [...redirectChain, currentUrl];
+
+      if (redirectChain.includes(redirectUrl) || expandedChain.includes(redirectUrl)) {
+        return createErrorResult(currentUrl, urlEncodedAddress, 'redirect loop', 'error', expandedChain, responseTime);
       }
-      const body = '';
-      return {
-        url: normalizedUrl,
-        normalizedUrl,
-        statusCode,
-        status: statusText,
-        statusCategory: 'redirect',
-        headers: responseHeaders,
-        contentType,
-        contentLength: 0,
-        transferredSize: 0,
-        body,
-        responseTime,
-        lastModified,
-        httpVersion,
-        urlEncodedAddress,
-        redirectUrl,
-        redirectType: 'http',
-        redirectChain: [...redirectChain, normalizedUrl],
-      };
+
+      if (!config.followRedirects) {
+        // Surface the 3xx verbatim so the engine can record it without chasing.
+        return {
+          url: currentUrl,
+          normalizedUrl: currentUrl,
+          statusCode,
+          status: statusText,
+          statusCategory: 'redirect',
+          headers: responseHeaders,
+          contentType,
+          contentLength: 0,
+          transferredSize: 0,
+          body: '',
+          responseTime,
+          lastModified,
+          httpVersion,
+          urlEncodedAddress,
+          redirectUrl,
+          redirectType: 'http',
+          redirectChain: expandedChain,
+        };
+      }
+
+      // Follow the redirect transparently. After the chain unwinds we attach
+      // the originating chain onto the FINAL hop so the final CrawlUrl record
+      // carries the full redirect history.
+      const next = await fetchSingleHop(redirectUrl, urlEncodedAddress, config, expandedChain, startTime);
+      if (!next.redirectChain || next.redirectChain.length === 0) {
+        next.redirectChain = expandedChain;
+      }
+      // The body, status, headers and content of `next` describe the final URL.
+      // Keep the final normalized URL but mark the original URL via the
+      // redirectChain so the engine can store metadata if needed.
+      next.urlEncodedAddress = urlEncodedAddress;
+      return next;
     }
 
     const body = await readBody(response.body);
     const transferredSize = Buffer.byteLength(body);
-
     const statusCategory = getStatusCategory(statusCode);
 
     return {
-      url: normalizedUrl,
-      normalizedUrl,
+      url: currentUrl,
+      normalizedUrl: currentUrl,
       statusCode,
       status: statusText,
       statusCategory,
@@ -112,7 +137,7 @@ export async function fetchUrl(
       urlEncodedAddress,
     };
   } catch (err) {
-    responseTime = (Date.now() - startTime) / 1000;
+    const responseTime = (Date.now() - startTime) / 1000;
     const error = err instanceof Error ? err.message : String(err);
     let errorType: FetchResult['errorType'] = 'error';
 
@@ -126,7 +151,7 @@ export async function fetchUrl(
       errorType = 'malformed';
     }
 
-    return createErrorResult(normalizedUrl, urlEncodedAddress, error, errorType, redirectChain, responseTime);
+    return createErrorResult(currentUrl, urlEncodedAddress, error, errorType, redirectChain, responseTime);
   }
 }
 

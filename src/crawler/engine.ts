@@ -265,11 +265,61 @@ export class CrawlEngine extends EventEmitter {
       }
     }
 
-    // Fetch URL
+    // Fetch URL. When followRedirects is true, the fetcher already chained
+    // through 3xx responses and returned the final response with the full
+    // redirect history attached, so we parse that as the page content.
     const fetchResult = await fetchUrl(normalizedUrl, this.config);
     this.frontier.markCrawled(normalizedUrl);
 
-    // Render JS if configured
+    // If the user disabled followRedirects, surface the 3xx as its own URL
+    // record and stop before parsing the (tiny) redirect body.
+    if (
+      !this.config.followRedirects &&
+      fetchResult.statusCategory === 'redirect' &&
+      fetchResult.redirectUrl
+    ) {
+      const redirectUrl: CrawlUrl = {
+        address: normalizedUrl,
+        normalizedAddress: normalizedUrl,
+        statusCode: fetchResult.statusCode,
+        status: fetchResult.status,
+        statusCategory: 'redirect',
+        redirectUrl: fetchResult.redirectUrl,
+        redirectType: fetchResult.redirectType ?? 'http',
+        redirectChain: fetchResult.redirectChain ?? [],
+        indexability: 'indexable',
+        crawlDepth: depth,
+        folderDepth: 0,
+        isInternal: isInternalUrl(normalizedUrl, this.startUrl, this.config.allowSubdomains),
+        isExternal: !isInternalUrl(normalizedUrl, this.startUrl, this.config.allowSubdomains),
+        isSecure: normalizedUrl.startsWith('https:'),
+        responseTime: fetchResult.responseTime,
+        crawledAt: new Date().toISOString(),
+      };
+      const redirectId = insertUrl(this.run!.id!, redirectUrl);
+      redirectUrl.id = redirectId;
+      return redirectUrl;
+    }
+
+    // When followRedirects is true the fetcher resolved to the final URL.
+    // Treat the final URL as the canonical address so the rest of the pipeline
+    // stores a single row per logical resource, with the chain recorded as
+    // metadata.
+    const effectiveUrl =
+      this.config.followRedirects &&
+      fetchResult.redirectChain &&
+      fetchResult.redirectChain.length > 0 &&
+      fetchResult.normalizedUrl &&
+      fetchResult.normalizedUrl !== normalizedUrl
+        ? fetchResult.normalizedUrl
+        : normalizedUrl;
+    if (effectiveUrl !== normalizedUrl) {
+      this.frontier.markCrawled(effectiveUrl);
+    }
+    const redirectChain = fetchResult.redirectChain ?? [];
+
+    // Render JS if configured (render the FINAL URL so we pick up JS-discovered
+    // links from the real destination rather than the redirect body).
     let renderResult: { html: string; resources: string[] } | undefined;
     const shouldRender =
       this.config.renderJs &&
@@ -278,7 +328,7 @@ export class CrawlEngine extends EventEmitter {
 
     if (shouldRender) {
       try {
-        renderResult = await renderPage(normalizedUrl, this.config.renderTimeout);
+        renderResult = await renderPage(effectiveUrl, this.config.renderTimeout);
       } catch {
         // Fall back to the raw HTML below.
       }
@@ -287,18 +337,29 @@ export class CrawlEngine extends EventEmitter {
     const effectiveBody = renderResult?.html ?? fetchResult.body;
 
     // Parse HTML
-    const parseResult = parseHtml(normalizedUrl, { ...fetchResult, body: effectiveBody }, this.startUrl, {
+    const parseResult = parseHtml(effectiveUrl, { ...fetchResult, body: effectiveBody }, this.startUrl, {
       allowSubdomains: this.config.allowSubdomains,
       followCanonical: this.config.followCanonical,
     });
 
     const crawlUrl = parseResult.url;
+    crawlUrl.address = effectiveUrl;
+    crawlUrl.normalizedAddress = effectiveUrl;
     crawlUrl.crawlDepth = depth;
     crawlUrl.rawHtml = fetchResult.body;
     if (renderResult) {
       crawlUrl.renderedHtml = renderResult.html;
       crawlUrl.resourceUrls = renderResult.resources;
     }
+    if (redirectChain.length > 0) {
+      crawlUrl.redirectChain = redirectChain;
+      if (this.config.followRedirects && redirectChain[0] !== effectiveUrl) {
+        crawlUrl.redirectUrl = effectiveUrl;
+        crawlUrl.redirectType = 'http';
+      }
+    }
+    crawlUrl.isInternal = isInternalUrl(effectiveUrl, this.startUrl, this.config.allowSubdomains);
+    crawlUrl.isExternal = !crawlUrl.isInternal;
 
     // Determine indexability status
     const robotsContent = domain ? this.robotsInfo.get(domain)?.content : undefined;
@@ -314,16 +375,16 @@ export class CrawlEngine extends EventEmitter {
     // Extract links from HTML
     if (effectiveBody && fetchResult.statusCode === 200) {
       const location: 'html' | 'rendered' = renderResult ? 'rendered' : 'html';
-      const links = extractLinksFromHtml(normalizedUrl, urlId, effectiveBody, this.startUrl, this.config, location);
+      const links = extractLinksFromHtml(effectiveUrl, urlId, effectiveBody, this.startUrl, this.config, location);
       const deduped = deduplicateLinks(links);
       insertLinks(this.run!.id!, deduped);
 
       // Extract images
-      const images = extractImagesFromHtml(effectiveBody, urlId, normalizedUrl);
+      const images = extractImagesFromHtml(effectiveBody, urlId, effectiveUrl);
       insertImages(this.run!.id!, images);
 
       // Extract structured data
-      const structuredData = extractStructuredDataFromHtml(effectiveBody, urlId, normalizedUrl);
+      const structuredData = extractStructuredDataFromHtml(effectiveBody, urlId, effectiveUrl);
       insertStructuredData(this.run!.id!, structuredData);
 
       // Add internal links to frontier
@@ -339,7 +400,7 @@ export class CrawlEngine extends EventEmitter {
       for (const link of crawlable) {
         let targetUrl = applyQueryStringHandling(link.targetUrl, this.config.queryStringHandling);
         if (isHtmlUrl(targetUrl)) {
-          this.frontier.add({ url: targetUrl, depth: depth + 1, sourceUrl: normalizedUrl, sourceUrlId: urlId });
+          this.frontier.add({ url: targetUrl, depth: depth + 1, sourceUrl: effectiveUrl, sourceUrlId: urlId });
         }
       }
     }
