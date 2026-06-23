@@ -77,7 +77,7 @@ function SidebarLink({ item }: { item: NavItem }) {
 
 export function Sidebar() {
   return (
-    <aside className="hidden md:flex w-64 shrink-0 flex-col bg-sidebar text-sidebar-foreground border-r border-sidebar-accent">
+    <aside className="hidden md:flex md:sticky md:top-0 md:self-start md:h-screen w-64 shrink-0 flex-col bg-sidebar text-sidebar-foreground border-r border-sidebar-accent z-20">
       <div className="flex items-center gap-3 px-5 h-16 border-b border-sidebar-accent">
         <div className="relative h-9 w-9 rounded-lg ring-grad flex items-center justify-center shadow-glow">
           <span className="font-bold text-white">O</span>
