@@ -26,6 +26,7 @@ import {
 import pkg from '../../package.json' with { type: 'json' };
 import { parseCrawlConfig } from '../config/index.js';
 import { publicDir, crawlsDir, exportsDir } from '../utils/workspace.js';
+import { printServerBanner } from '../cli/banner.js';
 
 const engines = new Map<number, CrawlEngine>();
 const latestProgress = new Map<number, CrawlProgressEvent>();
@@ -353,6 +354,10 @@ export async function startServer(port: number): Promise<ServerType> {
       fetch: app.fetch,
       port,
     }, () => {
+      // Print the backend banner from the server itself so every entry
+      // point (serve command, tests, programmatic startServer) surfaces
+      // the BE role with a solid-coloured ASCII logo.
+      printServerBanner(port, pkg.version);
       resolve(server);
     });
   });

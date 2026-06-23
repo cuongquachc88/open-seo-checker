@@ -131,14 +131,7 @@ BLOCK
   printf "${RESET}"
   printf "  ${DIM}A free, open-source technical-SEO auditor.${RESET}\n"
   printf "  ${DIM}Runs both the Hono backend and the Vite frontend from one place.${RESET}\n\n"
-
-  # Two role-coloured service rows sit just below the wordmark. The dot
-  # and the role label are solid colour (blue for BE, magenta for FE);
-  # the stack is bold neutral; the URL is solid green. No frames or
-  # gradient tricks — just solid coloured characters that identify the
-  # two servers at a glance.
-  printf "  ${BLUE}${BOLD}\xE2\x97\x8F${RESET}  ${BLUE}${BOLD}backend${RESET}  ${BOLD}Hono + SQLite${RESET}      ${GREEN}${BOLD}http://localhost:7437${RESET}\n"
-  printf "  ${MAGENTA}${BOLD}\xE2\x97\x8F${RESET}  ${MAGENTA}${BOLD}frontend${RESET} ${BOLD}Vite + React${RESET}      ${GREEN}${BOLD}http://localhost:5173${RESET}\n"
+  printf "  ${DIM}Each role prints its own banner below \xE2\x80\x94 blue for backend, magenta for frontend.${RESET}\n"
   printf "  ${DIM}logs below stream live  \xC2\xB7  Ctrl+C to stop both${RESET}\n\n"
 }
 

@@ -1,6 +1,5 @@
 import { Command } from 'commander';
 import { startServer } from '../../server/app.js';
-import { printServerBanner } from '../banner.js';
 import open from 'open';
 
 export const serveCommand = new Command('serve')
@@ -11,8 +10,8 @@ export const serveCommand = new Command('serve')
     const port = parseInt(options.port, 10);
     const server = await startServer(port);
 
-    printServerBanner(port);
-
+    // The backend banner is printed by startServer itself so the role
+    // colour lives in the TypeScript server, not in the bash orchestrator.
     if (options.open) {
       await open(`http://localhost:${port}`);
     }
