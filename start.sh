@@ -132,30 +132,13 @@ BLOCK
   printf "  ${DIM}A free, open-source technical-SEO auditor.${RESET}\n"
   printf "  ${DIM}Runs both the Hono backend and the Vite frontend from one place.${RESET}\n\n"
 
-  # Two role-coloured "service cards" sit just below the wordmark so the
-  # very first line a user reads after the banner tells them which
-  # colour belongs to which role — solid fills, no dimming or
-  # gradient — the BE half is solid blue, the FE half is solid magenta.
-  _width=50
-  _top() { printf "  ${1}┌$(printf '%*s' $((_width + 2)) '' | sed 's/ /─/g')┐${RESET}\n"; }
-  _bot() { printf "  ${1}└$(printf '%*s' $((_width + 2)) '' | sed 's/ /─/g')┘${RESET}\n"; }
-  _mid() { printf "  ${1}│${RESET} %-*s ${1}│${RESET}\n" "$_width" "$2"; }
-
-  # BE card — solid blue frame.
-  _top   "$BLUE"
-  _mid   "$BLUE" "${BLUE}${BOLD}●${RESET}  ${BLUE}${BOLD}BACKEND${RESET}    ${DIM}x${RESET} ${BOLD}Hono + SQLite${RESET}"
-  _mid   "$BLUE" "       ${GREEN}${BOLD}http://localhost:7437${RESET}"
-  _bot   "$BLUE"
-
-  printf "\n"
-
-  # FE card — solid magenta frame.
-  _top   "$MAGENTA"
-  _mid   "$MAGENTA" "${MAGENTA}${BOLD}●${RESET}  ${MAGENTA}${BOLD}FRONTEND${RESET}   ${DIM}x${RESET} ${BOLD}Vite + React${RESET}"
-  _mid   "$MAGENTA" "       ${GREEN}${BOLD}http://localhost:5173${RESET}"
-  _bot   "$MAGENTA"
-
-  printf "\n"
+  # Two role-coloured service rows sit just below the wordmark. The dot
+  # and the role label are solid colour (blue for BE, magenta for FE);
+  # the stack is bold neutral; the URL is solid green. No frames or
+  # gradient tricks — just solid coloured characters that identify the
+  # two servers at a glance.
+  printf "  ${BLUE}${BOLD}\xE2\x97\x8F${RESET}  ${BLUE}${BOLD}backend${RESET}  ${BOLD}Hono + SQLite${RESET}      ${GREEN}${BOLD}http://localhost:7437${RESET}\n"
+  printf "  ${MAGENTA}${BOLD}\xE2\x97\x8F${RESET}  ${MAGENTA}${BOLD}frontend${RESET} ${BOLD}Vite + React${RESET}      ${GREEN}${BOLD}http://localhost:5173${RESET}\n"
   printf "  ${DIM}logs below stream live  \xC2\xB7  Ctrl+C to stop both${RESET}\n\n"
 }
 
