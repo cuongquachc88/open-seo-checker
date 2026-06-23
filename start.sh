@@ -5,23 +5,93 @@
 #  Starts the backend (Hono + SQLite) and the frontend (Vite + React) in the
 #  same terminal, with a big banner up top and live, prefixed logs below.
 #  Press Ctrl+C to stop both.
+#
+#  Lives at the workspace root (`./start.sh`) so it can be launched directly
+#  from a clone: `bash ./start.sh` or via `pnpm start:sh`.
 # =============================================================================
 set -u
 
-DIR="$(cd "$(dirname "$0")/.." && pwd)"
+DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$DIR"
 
 # -----------------------------------------------------------------------------
-# Dependencies
+# Prerequisite auto-install
 # -----------------------------------------------------------------------------
-if ! command -v pnpm >/dev/null 2>&1; then
-  printf '\033[31mERROR\033[0m: pnpm is required. Install with: \033[36m npm i -g pnpm \033[0m\n' >&2
+#  Be a good first-run experience: if Node.js (>= 18) or pnpm is missing,
+#  install it instead of just bailing. The Node install is a per-OS hint
+#  because we never want the script to silently `sudo` anything; pnpm is a
+#  single npm / corepack command that always works once Node is on PATH.
+ensure_node() {
+  if ! command -v node >/dev/null 2>&1; then
+    printf '\033[31m[missing]\033[0m  Node.js was not found on PATH.\n'
+    printf '             Install one of these:\n'
+    printf '               \033[36mmacOS\033[0m   brew install node@20\n'
+    printf '               \033[36mLinux\033[0m   sudo apt-get install -y nodejs npm   (Debian/Ubuntu)\n'
+    printf '                                sudo dnf install -y nodejs npm        (Fedora)\n'
+    printf '               \033[36mnvm\033[0m     curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash\n'
+    printf '                        && nvm install 20 && nvm use 20\n'
+    printf '               \033[36mWindows\033[0m winget install OpenJS.NodeJS.LTS\n'
+    printf '             Then re-run \033[36m./start.sh\033[0m.\n'
+    return 1
+  fi
+
+  # Major version guard. We require Node >= 18.
+  local major
+  major="$(node --version 2>/dev/null | sed -E 's/^v([0-9]+).*/\1/')"
+  if [ -z "$major" ] || [ "$major" -lt 18 ]; then
+    printf '\033[33m[too old]\033[0m  Node.js %s detected; this project requires \033[1m>= 18\033[0m.\n' "$(node --version 2>/dev/null || echo unknown)"
+    printf '               Upgrade via the OS-specific instructions above, or use `nvm install 20`.\n'
+    return 1
+  fi
+  return 0
+}
+
+ensure_pnpm() {
+  if command -v pnpm >/dev/null 2>&1; then
+    return 0
+  fi
+
+  if ! command -v npm >/dev/null 2>&1 && ! command -v corepack >/dev/null 2>&1; then
+    printf '\033[31m[missing]\033[0m  Neither npm nor corepack found. Install Node.js first.\n'
+    return 1
+  fi
+
+  # 1) corepack (built into Node 16.13+) is the recommended way.
+  if command -v corepack >/dev/null 2>&1; then
+    printf '\033[36m[install]\033[0m   enabling corepack + activating pnpm\xE2\x80\xA6\n'
+    if corepack enable >/dev/null 2>&1 \
+      && corepack prepare pnpm@latest --activate >/dev/null 2>&1 \
+      && command -v pnpm >/dev/null 2>&1; then
+      printf '\033[32m[ok]\033[0m        pnpm ready via corepack.\n'
+      return 0
+    fi
+    printf '\033[33m[fallback]\033[0m  corepack did not yield a pnpm binary; trying npm.\n'
+  fi
+
+  # 2) npm fallback.
+  if command -v npm >/dev/null 2>&1; then
+    printf '\033[36m[install]\033[0m   installing pnpm globally via npm\xE2\x80\xA6\n'
+    if npm i -g pnpm >/dev/null 2>&1 && command -v pnpm >/dev/null 2>&1; then
+      printf '\033[32m[ok]\033[0m        pnpm installed via npm.\n'
+      return 0
+    fi
+  fi
+
+  printf '\033[31m[failed]\033[0m   could not install pnpm automatically.\n'
+  printf '             Run manually: \033[36mnpm i -g pnpm\033[0m  (after ensuring Node is on PATH)\n'
+  return 1
+}
+
+if ! ensure_node; then
+  exit 1
+fi
+if ! ensure_pnpm; then
   exit 1
 fi
 
 # Make sure both runtimes have their node_modules.
-if [ ! -d node_modules ] || [ ! -d frontend/node_modules ]; then
-  printf '\033[33mInstalling dependencies…\033[0m\n'
+if [ ! -d node_modules ] || [ ! -d packages/api/node_modules ] || [ ! -d packages/web/node_modules ]; then
+  printf '\033[36m[install]\033[0m   fetching workspace dependencies with pnpm\xE2\x80\xA6\n'
   pnpm install
 fi
 
