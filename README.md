@@ -12,8 +12,8 @@ A free, open-source, cross-platform website crawler and SEO auditing tool that r
 # Install dependencies
 pnpm install
 
-# Build the project
-npm run build
+# Build the React frontend + backend (one command)
+pnpm build
 
 # Launch the web UI (auto-opens browser)
 ./open-seo-checker.sh          # macOS / Linux
@@ -24,6 +24,10 @@ node dist/index.js crawl https://example.com --output report.csv
 ```
 
 The web UI runs at `http://localhost:7437` by default.
+
+> Tip: the launcher scripts auto-build if no artefacts are present, so you can ship the
+> project as-is and first-time users only need `pnpm install` followed by launching the
+> appropriate shell / batch file.
 
 ## CLI Commands
 
@@ -38,13 +42,16 @@ node dist/index.js health <db-file> [--run-id 1]
 
 ## Technology Stack
 
-- **Runtime**: Node.js + TypeScript
-- **Web Server**: Hono
-- **HTTP Client**: undici
-- **HTML Parsing**: cheerio
-- **JavaScript Rendering**: Playwright (Chromium) - flag available
+- **Backend runtime**: Node.js + TypeScript
+- **Web server**: Hono (Express-compatible, edge-friendly)
+- **HTTP client**: undici
+- **HTML parsing**: cheerio
+- **JavaScript rendering**: Playwright (Chromium)
 - **Database**: SQLite (better-sqlite3)
-- **Frontend**: Vanilla HTML + Tailwind CSS (CDN)
+- **Frontend**: Vite + React 18 + TypeScript + Tailwind CSS + shadcn/ui-style components
+- **Charts**: Recharts
+- **Data grid**: TanStack Table
+- **Routing**: react-router-dom
 - **Export**: CSV, JSON, XLSX, XML sitemaps
 
 ## Features
@@ -77,34 +84,81 @@ node dist/index.js health <db-file> [--run-id 1]
 
 ```
 open-seo-checker/
-├── src/
-│   ├── analyzer/          # SEO analysis modules
-│   ├── ai/                # LLM provider integrations
-│   ├── cli/               # CLI commands
-│   ├── compare/           # Crawl comparison
-│   ├── config/            # Default crawl configuration
-│   ├── crawler/           # Crawl engine, fetcher, parser
-│   ├── ecommerce/         # E-commerce SEO audits
-│   ├── exporters/         # CSV, JSON, XLSX, sitemap generators
-│   ├── health-score.ts    # Overall health score calculation
-│   ├── integrations/      # Google APIs, Majestic, Ahrefs, Moz
-│   ├── keywords/          # Keyword extraction
-│   ├── local-seo/         # Local SEO audits
-│   ├── llms/              # llms.txt support
-│   ├── backlinks/         # Backlink analysis
-│   ├── scoring/           # Content scoring
-│   ├── scheduler/         # Cron-like scheduler
-│   ├── server/            # Hono web server + API routes
-│   ├── storage/           # SQLite database layer
-│   ├── types/             # TypeScript types
-│   └── utils/             # URL, pixel-width, hash utilities
-├── public/                # Web UI static files
-├── crawls/                # SQLite crawl databases
-├── scripts/               # Build/postinstall scripts
-├── open-seo-checker.sh    # macOS/Linux launcher
-├── open-seo-checker.bat   # Windows launcher
+├── src/                         # Backend (Node + TypeScript)
+│   ├── analyzer/                # SEO analysis modules
+│   ├── ai/                      # LLM provider integrations
+│   ├── cli/                     # CLI commands
+│   ├── compare/                 # Crawl comparison
+│   ├── config/                  # Default crawl configuration
+│   ├── crawler/                 # Crawl engine, fetcher, parser
+│   ├── ecommerce/               # E-commerce SEO audits
+│   ├── exporters/               # CSV, JSON, XLSX, sitemap generators
+│   ├── health-score.ts          # Overall health score calculation
+│   ├── integrations/            # Google APIs, Majestic, Ahrefs, Moz
+│   ├── keywords/                # Keyword extraction
+│   ├── local-seo/               # Local SEO audits
+│   ├── llms/                    # llms.txt support
+│   ├── backlinks/               # Backlink analysis
+│   ├── renderer/                # Playwright JS rendering
+│   ├── scoring/                 # Content scoring
+│   ├── scheduler/               # Cron-like scheduler
+│   ├── server/                  # Hono web server + API routes
+│   ├── storage/                 # SQLite database layer
+│   ├── types/                   # TypeScript types
+│   └── utils/                   # URL, pixel-width, hash utilities
+├── frontend/                    # Vite + React + shadcn-style UI
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── ui/              # Buttons, cards, tabs, sheets, etc.
+│   │   │   ├── layout/          # App shell, sidebar, topbar
+│   │   │   ├── dashboard/       # Stat cards, gauge, charts
+│   │   │   ├── issues/          # Issues explorer
+│   │   │   ├── urls/            # URL explorer (TanStack Table)
+│   │   │   ├── sitemap/         # Sitemap viewer
+│   │   │   ├── compare/         # Run comparison
+│   │   │   └── ai/              # AI insights
+│   │   ├── pages/               # Top-level routes
+│   │   ├── hooks/               # useApi, useInterval, useDocumentTitle
+│   │   └── lib/                 # api.ts, utils.ts
+│   └── vite.config.ts           # Outputs to ../public/
+├── public/                      # Static output of vite build
+├── crawls/                      # SQLite crawl databases
+├── scripts/                     # Build/postinstall scripts
+├── open-seo-checker.sh          # macOS/Linux launcher (build + run + open browser)
+├── open-seo-checker.bat         # Windows launcher
 └── package.json
 ```
+
+## Frontend Architecture
+
+The dashboard is a single-page React app built with Vite and shipped as static assets into
+`public/`. The Hono backend serves both `/api/*` and `/` from the same port (default 7437).
+
+Build pipeline:
+
+```
+frontend/  --pnpm build-->  public/  (HTML + hashed assets, served by Hono)
+src/      --tsc-->          dist/    (CLI + server compiled to JS)
+```
+
+Top-level features:
+
+- **App shell** with persistent sidebar nav, breadcrumbs, command-style global search and
+  dark mode.
+- **Dashboard overview** with hero health gauge, stat tiles, recent runs list and severity
+  distribution chart.
+- **New Crawl** wizard with full configuration (modes, depth, threads, behaviour, JS
+  rendering, API keys).
+- **Crawl detail** with 6 tabs:
+  - **Overview** - composite health score, per-category breakdown, quick wins.
+  - **Issues** - grouped by category + priority with "how to fix" hints.
+  - **URLs** - filterable, sortable data table with row sheet showing in/out links.
+  - **Sitemap** - XML preview with copy / download.
+  - **Compare** - diff against any baseline run (added / removed / changed).
+  - **AI Insights** - OpenAI / Anthropic / Gemini / Kimi / MiniMax / Ollama prompts.
+- **Reports, Runs, Sitemap Studio, Compare Runs, AI Insights** as standalone tools.
+- **Settings** for storing API keys locally (browser-only, never sent to a backend except the
+  respective provider).
 
 ## Development
 

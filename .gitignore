@@ -1,4 +1,5 @@
 node_modules/
+frontend/node_modules/
 dist/
 *.log
 .env
@@ -8,6 +9,8 @@ exports/
 .DS_Store
 coverage/
 *.tsbuildinfo
+frontend/*.tsbuildinfo
+public/assets/
 public/styles/tailwind.css
 tokens.json
 

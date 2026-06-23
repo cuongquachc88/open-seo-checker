@@ -8,10 +8,10 @@
     "open-seo-checker": "dist/index.js"
   },
   "scripts": {
-    "build": "tsc",
-    "build:css": "npx tailwindcss -i ./public/styles/tailwind-input.css -o ./public/styles/tailwind.css --minify || true",
+    "build": "pnpm --filter open-seo-checker-frontend build && tsc",
+    "build:frontend": "pnpm --filter open-seo-checker-frontend build",
+    "build:backend": "tsc",
     "dev": "tsx src/index.ts serve",
-    "dev:css": "npx tailwindcss -i ./public/styles/tailwind-input.css -o ./public/styles/tailwind.css --watch",
     "start": "node dist/index.js serve",
     "crawl": "node dist/index.js crawl",
     "test": "vitest",
