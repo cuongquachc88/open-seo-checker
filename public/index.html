@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Open SEO Checker</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+  <div class="max-w-6xl mx-auto p-6">
+    <header class="mb-8">
+      <h1 class="text-3xl font-bold text-gray-800">Open SEO Checker</h1>
+      <p class="text-gray-600">Free, open-source website crawler and SEO auditor.</p>
+    </header>
+
+    <section class="bg-white rounded-lg shadow p-6 mb-8">
+      <h2 class="text-xl font-semibold text-gray-800 mb-4">Start a Crawl</h2>
+      <form id="crawlForm" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="md:col-span-2">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Starting URL</label>
+          <input type="url" id="startUrl" required placeholder="https://example.com" class="w-full border rounded px-3 py-2">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Max URLs</label>
+          <input type="number" id="maxUrls" value="1000" min="1" class="w-full border rounded px-3 py-2">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Max Depth</label>
+          <input type="number" id="maxDepth" value="10" min="1" class="w-full border rounded px-3 py-2">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Threads</label>
+          <input type="number" id="threads" value="10" min="1" class="w-full border rounded px-3 py-2">
+        </div>
+        <div class="flex items-center space-x-4 md:col-span-2">
+          <label class="inline-flex items-center">
+            <input type="checkbox" id="renderJs" class="mr-2"> Render JavaScript
+          </label>
+          <label class="inline-flex items-center">
+            <input type="checkbox" id="respectRobots" checked class="mr-2"> Respect robots.txt
+          </label>
+          <label class="inline-flex items-center">
+            <input type="checkbox" id="allowSubdomains" class="mr-2"> Allow subdomains
+          </label>
+        </div>
+        <div class="md:col-span-2">
+          <button type="submit" id="startBtn" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 disabled:opacity-50">
+            Start Crawl
+          </button>
+        </div>
+      </form>
+
+      <div id="progress" class="mt-6 hidden">
+        <div class="flex justify-between text-sm mb-1">
+          <span id="progressText">Crawling...</span>
+          <span id="progressPercent">0%</span>
+        </div>
+        <div class="w-full bg-gray-200 rounded h-4">
+          <div id="progressBar" class="bg-blue-600 h-4 rounded transition-all" style="width: 0%"></div>
+        </div>
+        <div class="grid grid-cols-4 gap-4 mt-3 text-center text-sm">
+          <div class="bg-gray-50 rounded p-2">
+            <div class="font-semibold" id="statCrawled">0</div>
+            <div class="text-gray-500">Crawled</div>
+          </div>
+          <div class="bg-gray-50 rounded p-2">
+            <div class="font-semibold" id="statFound">0</div>
+            <div class="text-gray-500">Found</div>
+          </div>
+          <div class="bg-gray-50 rounded p-2">
+            <div class="font-semibold" id="statErrors">0</div>
+            <div class="text-gray-500">Errors</div>
+          </div>
+          <div class="bg-gray-50 rounded p-2">
+            <div class="font-semibold" id="statQueue">0</div>
+            <div class="text-gray-500">Queue</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="result" class="mt-6 hidden">
+        <h3 class="text-lg font-semibold text-gray-800 mb-2">Crawl Complete</h3>
+        <div class="space-x-2">
+          <a id="urlsLink" href="#" target="_blank" class="text-blue-600 hover:underline">View URLs</a>
+          <a id="issuesLink" href="#" target="_blank" class="text-blue-600 hover:underline">View Issues</a>
+          <a id="sitemapLink" href="#" target="_blank" class="text-blue-600 hover:underline">XML Sitemap</a>
+          <a id="healthLink" href="#" target="_blank" class="text-blue-600 hover:underline">Health Score</a>
+          <button id="exportBtn" class="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 text-sm">Export CSV</button>
+        </div>
+        <p id="exportResult" class="text-sm text-gray-600 mt-2"></p>
+      </div>
+    </section>
+
+    <section class="bg-white rounded-lg shadow p-6">
+      <h2 class="text-xl font-semibold text-gray-800 mb-4">Crawl Runs</h2>
+      <div id="runsList" class="space-y-2">
+        <p class="text-gray-500">Loading...</p>
+      </div>
+    </section>
+
+    <section class="bg-white rounded-lg shadow p-6 mt-8">
+      <h2 class="text-xl font-semibold text-gray-800 mb-4">Features</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+        <div>
+          <h3 class="font-semibold">Core Crawl</h3>
+          <p class="text-gray-600">Spider + list mode, robots.txt, redirects, sitemaps, JavaScript rendering flag.</p>
+        </div>
+        <div>
+          <h3 class="font-semibold">On-Page SEO</h3>
+          <p class="text-gray-600">Titles, meta descriptions, headings, canonicals, hreflang, pagination, images, structured data.</p>
+        </div>
+        <div>
+          <h3 class="font-semibold">Technical SEO</h3>
+          <p class="text-gray-600">Broken links, redirect chains, internal linking, security headers, mixed content, accessibility.</p>
+        </div>
+        <div>
+          <h3 class="font-semibold">Integrations & AI</h3>
+          <p class="text-gray-600">Google Analytics, Search Console, PageSpeed Insights, Majestic, Ahrefs, Moz, OpenAI, Kimi, MiniMax, Ollama.</p>
+        </div>
+        <div>
+          <h3 class="font-semibold">Export & Reports</h3>
+          <p class="text-gray-600">CSV, JSON, XLSX, XML sitemaps, PDF ready, health score, crawl comparison.</p>
+        </div>
+        <div>
+          <h3 class="font-semibold">Beyond Screaming Frog</h3>
+          <p class="text-gray-600">Log file analysis, backlink analysis, keyword extraction, content scoring, local/e-commerce SEO, llms.txt.</p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const API = '';
+    let currentRunId = null;
+    let pollTimer = null;
+
+    async function loadRuns() {
+      try {
+        const res = await fetch(`${API}/api/runs`);
+        const data = await res.json();
+        const list = document.getElementById('runsList');
+        if (!data.runs || data.runs.length === 0) {
+          list.innerHTML = '<p class="text-gray-500">No crawl runs yet.</p>';
+          return;
+        }
+        list.innerHTML = data.runs.map(run => `
+          <div class="border rounded p-3 flex justify-between items-center">
+            <div>
+              <div class="font-semibold">${run.name || 'Crawl'}</div>
+              <div class="text-sm text-gray-500">${run.startUrl} — ${run.status}</div>
+              <div class="text-xs text-gray-400">Crawled: ${run.urlsCrawled} | Found: ${run.urlsFound} | Errors: ${run.errors}</div>
+            </div>
+            <div class="space-x-2 text-sm">
+              <a href="/api/crawl/${run.id}/urls" target="_blank" class="text-blue-600 hover:underline">URLs</a>
+              <a href="/api/crawl/${run.id}/issues" target="_blank" class="text-blue-600 hover:underline">Issues</a>
+              <a href="/api/crawl/${run.id}/status" target="_blank" class="text-blue-600 hover:underline">Status</a>
+            </div>
+          </div>
+        `).join('');
+      } catch (err) {
+        document.getElementById('runsList').innerHTML = `<p class="text-red-500">Failed to load runs: ${err.message}</p>`;
+      }
+    }
+
+    async function pollStatus(runId) {
+      try {
+        const res = await fetch(`${API}/api/crawl/${runId}/status`);
+        if (!res.ok) return;
+        const data = await res.json();
+        updateProgress(data);
+        if (data.status === 'running') {
+          pollTimer = setTimeout(() => pollStatus(runId), 1000);
+        } else {
+          showResult(runId);
+        }
+      } catch (err) {
+        console.error('Status poll failed', err);
+      }
+    }
+
+    function updateProgress(data) {
+      const progress = data.progress || data;
+      const total = Math.max(progress.urlsFound || 0, progress.urlsCrawled || 0, 1);
+      const percent = Math.min(100, Math.round((progress.urlsCrawled / total) * 100));
+      document.getElementById('progress').classList.remove('hidden');
+      document.getElementById('progressBar').style.width = `${percent}%`;
+      document.getElementById('progressPercent').textContent = `${percent}%`;
+      document.getElementById('progressText').textContent = progress.currentUrl || 'Crawling...';
+      document.getElementById('statCrawled').textContent = progress.urlsCrawled || 0;
+      document.getElementById('statFound').textContent = progress.urlsFound || 0;
+      document.getElementById('statErrors').textContent = progress.errors || 0;
+      document.getElementById('statQueue').textContent = progress.urlsQueued || 0;
+    }
+
+    function showResult(runId) {
+      document.getElementById('result').classList.remove('hidden');
+      document.getElementById('urlsLink').href = `/api/crawl/${runId}/urls`;
+      document.getElementById('issuesLink').href = `/api/crawl/${runId}/issues`;
+      document.getElementById('sitemapLink').href = `/api/crawl/${runId}/sitemap`;
+      document.getElementById('healthLink').href = `/api/crawl/${runId}/health`;
+      document.getElementById('exportBtn').onclick = () => exportCsv(runId);
+      document.getElementById('startBtn').disabled = false;
+      document.getElementById('startBtn').textContent = 'Start Crawl';
+      loadRuns();
+    }
+
+    async function exportCsv(runId) {
+      const btn = document.getElementById('exportBtn');
+      btn.disabled = true;
+      btn.textContent = 'Exporting...';
+      try {
+        const res = await fetch(`${API}/api/crawl/${runId}/export`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ format: 'csv' })
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        document.getElementById('exportResult').textContent = `Exported to ${data.path}`;
+      } catch (err) {
+        document.getElementById('exportResult').textContent = `Export failed: ${err.message}`;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Export CSV';
+      }
+    }
+
+    document.getElementById('crawlForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('startBtn');
+      btn.disabled = true;
+      btn.textContent = 'Starting...';
+
+      const config = {
+        startUrl: document.getElementById('startUrl').value,
+        mode: 'spider',
+        maxUrls: parseInt(document.getElementById('maxUrls').value, 10),
+        maxDepth: parseInt(document.getElementById('maxDepth').value, 10),
+        threads: parseInt(document.getElementById('threads').value, 10),
+        userAgent: 'OpenSEOCrawler/1.0',
+        customHeaders: {},
+        respectRobotsTxt: document.getElementById('respectRobots').checked,
+        followRedirects: true,
+        allowSubdomains: document.getElementById('allowSubdomains').checked,
+        crawlExternal: true,
+        renderJs: document.getElementById('renderJs').checked,
+        renderTimeout: 30000,
+        includeImages: true,
+        includeCss: true,
+        includeJs: true,
+        includePdfs: false,
+        excludePatterns: [],
+        includePatterns: [],
+        queryStringHandling: 'keep',
+        useSitemaps: false,
+        followCanonical: true,
+        followHreflang: true,
+        checkSpelling: false,
+        checkGrammar: false,
+        nearDuplicateThreshold: 90,
+        enableNearDuplicates: false,
+        enableSemanticSimilarity: false,
+      };
+
+      try {
+        const res = await fetch(`${API}/api/crawl`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(config)
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        currentRunId = data.runId;
+        document.getElementById('result').classList.add('hidden');
+        document.getElementById('exportResult').textContent = '';
+        pollStatus(currentRunId);
+      } catch (err) {
+        btn.disabled = false;
+        btn.textContent = 'Start Crawl';
+        alert('Failed to start crawl: ' + err.message);
+      }
+    });
+
+    loadRuns();
+  </script>
+</body>
+</html>
