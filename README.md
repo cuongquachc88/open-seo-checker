@@ -1,5 +1,9 @@
 # Open SEO Checker
 
+```bash
+curl -fsSL https://raw.githubusercontent.com/cuongquachc88/open-seo-checker/main/scripts/install-from-release.sh | bash
+```
+
 A free, open-source, cross-platform website crawler and SEO auditing tool with a
 local CLI and a built-in dashboard. Run audits, score content, configure AI
 providers, schedule recurring crawls.
