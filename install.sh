@@ -131,24 +131,66 @@ fi
 echo
 
 # ----- Step 4: shortcut -------------------------------------------------------
-printf "${BLUE}\xE2\x86\x92 Step 4/4  Creating desktop shortcut${RESET}\n"
+printf "${BLUE}\xE2\x86\x92 Step 4/4  Creating application shortcut${RESET}\n"
+
+generate_macos_icon() {
+  # Build an .icns icon from public/favicon.svg using the macOS tools that
+  # are present on every Mac (qlmanage + sips + iconutil).
+  local svg="$1"
+  local icns="$2"
+  local tmpdir iconset base_png
+  tmpdir="$(mktemp -d -t oseo-icon.XXXXXX)"
+  iconset="$tmpdir/OpenSEO.iconset"
+  mkdir -p "$iconset"
+
+  if ! qlmanage -t -s 1024 -o "$tmpdir" "$svg" >/dev/null 2>&1; then
+    rm -rf "$tmpdir"
+    return 1
+  fi
+  base_png="$tmpdir/favicon.svg.png"
+  if [ ! -f "$base_png" ]; then
+    rm -rf "$tmpdir"
+    return 1
+  fi
+
+  for size in 16 32 64 128 256 512; do
+    sips -z "$size" "$size" "$base_png" --out "$iconset/icon_${size}x${size}.png" >/dev/null 2>&1
+    local retina=$((size * 2))
+    sips -z "$retina" "$retina" "$base_png" --out "$iconset/icon_${size}x${size}@2x.png" >/dev/null 2>&1
+  done
+  sips -z 1024 1024 "$base_png" --out "$iconset/icon_512x512@2x.png" >/dev/null 2>&1
+
+  iconutil -c icns "$iconset" -o "$icns" >/dev/null 2>&1
+  local rc=$?
+  rm -rf "$tmpdir"
+  return $rc
+}
 
 create_macos_shortcut() {
-  # Real .app bundle so Finder shows it like any other app and a normal
-  # double-click launches Terminal.app with the runner script. The
-  # launcher resolves the repo path from its own location ($0) so the
-  # bundle stays portable if the repo is moved on disk.
-  local desktop="$HOME/Desktop"
-  if [ ! -d "$desktop" ]; then
-    mkdir -p "$desktop" 2>/dev/null || desktop="$HOME"
+  # Real .app bundle in /Applications so Finder shows it like any other app.
+  # Falls back to the user's Desktop if /Applications is not writable.
+  local app_dir="/Applications/Open SEO Checker.app"
+  if [ ! -w "/Applications" ] && ! mkdir -p "/Applications" 2>/dev/null; then
+    local desktop="$HOME/Desktop"
+    if [ ! -d "$desktop" ]; then
+      mkdir -p "$desktop" 2>/dev/null || desktop="$HOME"
+    fi
+    app_dir="$desktop/Open SEO Checker.app"
   fi
-  local app_dir="$desktop/Open SEO Checker.app"
   local macos_dir="$app_dir/Contents/MacOS"
   local resources_dir="$app_dir/Contents/Resources"
   rm -rf "$app_dir" 2>/dev/null || true
   mkdir -p "$macos_dir" "$resources_dir"
 
-  cat > "$app_dir/Contents/Info.plist" <<'PLIST'
+  local icon_name="OpenSEO"
+  local icns_path="$resources_dir/${icon_name}.icns"
+  if [ -f "$DIR/public/favicon.svg" ]; then
+    generate_macos_icon "$DIR/public/favicon.svg" "$icns_path" || true
+  fi
+  local icon_key=""
+  [ -f "$icns_path" ] && icon_key="<key>CFBundleIconFile</key><string>${icon_name}</string>"
+
+  cat > "$app_dir/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -163,6 +205,7 @@ create_macos_shortcut() {
   <key>LSMinimumSystemVersion</key>    <string>11.0</string>
   <key>LSUIElement</key>               <true/>
   <key>NSHighResolutionCapable</key>   <true/>
+  ${icon_key}
 </dict>
 </plist>
 PLIST

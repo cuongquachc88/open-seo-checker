@@ -14,6 +14,7 @@ import {
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { BrandMark } from '@/components/brand/BrandMark';
+import rootPackage from '../../../../../package.json';
 
 interface NavItem {
   to: string;
@@ -109,8 +110,8 @@ export function Sidebar() {
       <div className="border-t border-sidebar-accent p-4 space-y-2">
         <SidebarLink item={{ to: '/settings', label: 'Settings', icon: Settings }} />
         <div className="rounded-md bg-sidebar-accent p-3 text-xs text-sidebar-foreground/70 leading-relaxed">
-          <p className="font-medium text-sidebar-foreground">v0.1.0 </p>
-          <p>Free, open source, MIT licensed.</p>
+          <p className="font-medium text-sidebar-foreground">v{rootPackage.version} </p>
+          <p>Free, open source, {rootPackage.license} licensed.</p>
         </div>
       </div>
     </aside>

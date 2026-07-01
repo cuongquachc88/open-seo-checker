@@ -2,6 +2,7 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import rootPackage from '../../package.json';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -29,7 +30,7 @@ const WORDMARK = [
 const TAGLINE = 'FRONTEND  ·  Vite + React 19';
 
 /** Print a magenta FE banner that mirrors the BE banner from the API. */
-function printFrontendBanner(port: number, version = '0.1.0'): void {
+function printFrontendBanner(port: number, version = rootPackage.version): void {
   const color = ANSI.magenta;
   const innerWidth = 70;
   const frame = `${ANSI.bold}${color}`;
