@@ -1,0 +1,115 @@
+name: Release
+
+# ------------------------------------------------------------------------------
+#  Builds source and binary bundles on every pushed tag matching v*, and
+#  publishes a GitHub Release with auto-generated notes.
+#
+#    Tag         Result
+#    ----------  ---------------------------------------------------
+#    v0.1.0      Release "v0.1.0" published with assets:
+#                  · open-seo-checker.zip       (Windows-friendly)
+#                  · open-seo-checker.tar.gz    (macOS / Linux)
+#    v0.1.1      Hotfix release same shape
+#
+#  The workflow does NOT run the e2e suite (tag is trusted because main
+#  is always green); instead it does a fast lint + unit-test gate.
+# ------------------------------------------------------------------------------
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+
+# Allow only one concurrent release run.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+# Node 20 deprecation toggle (same as pages.yml).
+env:
+  ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: 'true'
+
+permissions:
+  contents: write  # required for softprops/action-gh-release to push artefacts
+
+jobs:
+  build:
+    name: Build release artefacts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Unit tests
+        run: pnpm test:unit
+
+      - name: Build API + dashboard
+        run: pnpm build
+
+      - name: Package platform bundles
+        # Copy the install script + the prebuilt artefacts onto a single
+        # tree that's tar/zip-friendly. Both archives include everything
+        # the installer needs, so the recipient never has to run a build.
+        run: |
+          set -euo pipefail
+          STAGE="release-stage"
+          rm -rf "$STAGE"
+          mkdir -p "$STAGE"
+          # Public artefact paths
+          cp -R public                  "$STAGE/public"
+          cp -R packages/api/dist       "$STAGE/dist"
+          cp    install.sh              "$STAGE/install.sh"
+          cp    install.bat             "$STAGE/install.bat"
+          cp    open-seo-checker.sh     "$STAGE/open-seo-checker.sh"
+          cp    open-seo-checker.bat    "$STAGE/open-seo-checker.bat"
+          cp    start.sh                "$STAGE/start.sh"
+          chmod +x "$STAGE/install.sh" "$STAGE/open-seo-checker.sh" "$STAGE/start.sh"
+          # Build both archive formats
+          (cd "$STAGE" && tar czf "../open-seo-checker.tar.gz" .)
+          (cd "$STAGE" && zip -qr "../open-seo-checker.zip" .)
+          echo
+          echo "===== artefacts ====="
+          ls -la open-seo-checker.tar.gz open-seo-checker.zip
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ github.ref_name }}
+          generate_release_notes: true
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          body: |
+            ## ${{ github.ref_name }}
+
+            Self-contained bundles of Open SEO Checker at this tag.
+
+            - **`open-seo-checker.zip`** — Windows. Unzip and double-click
+              `install.bat`.
+            - **`open-seo-checker.tar.gz`** — macOS / Linux. Extract and run
+              `./install.sh`.
+
+            Both installers drop a desktop shortcut that starts the server
+            and opens the dashboard with a single double-click. See the
+            full [manual install guide](wiki/index.html) for the headless /
+            CI path.
+          files: |
+            open-seo-checker.tar.gz
+            open-seo-checker.zip
