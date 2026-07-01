@@ -11,6 +11,13 @@ providers, schedule recurring crawls.
   over HTTP and JS-rendering uses Playwright Chromium that we install at
   first-run time.
 
+Install in one command:
+
+```bash
+./install.sh      # macOS / Linux
+install.bat       # Windows
+```
+
 > Documentation lives in two places:
 >   - This README — quickstart, features, project layout, API surface.
 >   - `docs/index.html` — the product landing page published to GitHub
