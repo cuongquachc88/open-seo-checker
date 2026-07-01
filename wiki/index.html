@@ -793,6 +793,22 @@ packages/api  --tsc--&gt;         /packages/api/dist/ (CLI + server JS)
       <li><strong>Color-coded roles in the terminal.</strong> Backend process prints a solid blue ASCII banner; frontend process prints a solid magenta one. The orchestrator only prints a short startup message.</li>
     </ul>
 
+    <h2 id="pages-deployment">Pages deployment <a class="anchor" href="#pages-deployment">#</a></h2>
+    <p>
+      The same wiki is published to <strong>GitHub Pages</strong> by
+      <code>.github/workflows/pages.yml</code> on every push to <code>main</code>.
+      The deployed URL is <code>https://&lt;owner&gt;.github.io/&lt;repo&gt;/</code>.
+    </p>
+    <div class="callout warn">
+      <strong>One-time setup:</strong> the GitHub integration token cannot
+      create a Pages site on its own. A repo admin must enable Pages
+      first: <strong>Settings &rarr; Pages &rarr; Source: "GitHub Actions"</strong>.
+      After that, every successful run on <code>main</code> redeploys the
+      site. If the workflow fails with <em>"Resource not accessible by
+      integration"</em>, that means the manual toggle above has not
+      happened yet.
+    </div>
+
     <p style="margin-top: 48px; color: var(--muted); font-size: 13px;">
       MIT · Open SEO Checker · Built with Hono, Vite, React, Playwright &amp; better-sqlite3.
     </p>

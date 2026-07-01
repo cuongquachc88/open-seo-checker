@@ -9,13 +9,20 @@ name: Deploy GitHub Pages
 #    pair, so the Pages source is "GitHub Actions" — no branch needs to be
 #    configured for Pages in the repo settings beyond enabling the env.
 #
-#  How to enable on a fresh repo:
-#    1.  Workflow auto-enables Pages via `actions/configure-pages@v5`
-#        with `enablement: true` on the first successful run. Repo
-#        admins may receive a confirmation request on first enable.
-#    2.  Allow the workflow to write to the `github-pages` environment.
+#  One-time setup (required because the GitHub App token does NOT have
+#  the privilege to create a Pages site programmatically on this repo):
+#    1.  Settings  ->  Pages  ->  Source: "GitHub Actions"
+#    2.  Allow the workflow to write to the `github-pages` environment
+#        the first time it runs.
 #    3.  Push to main. The first successful run will publish
 #        https://<owner>.github.io/<repo>/  to show wiki/index.html.
+#
+#  Notes on `enablement`: we deliberately do NOT pass enablement: true
+#  to `actions/configure-pages@v5`. Org / repo policies commonly forbid
+#  the integration token from calling the Pages create endpoint and the
+#  job fails with "Resource not accessible by integration". Resolving
+#  it required bumping the integration scope admin-side; until then,
+#  the manual enable step above is the supported path.
 # ------------------------------------------------------------------------------
 
 on:
@@ -51,13 +58,10 @@ jobs:
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
-        # Enable GitHub Pages programmatically on the first successful
-        # run. Subsequent runs use 'no-changes' which is the v5 default
-        # and just queries the existing config. Repo admins still get
-        # the standard "this workflow wants to publish Pages" prompt on
-        # first enable.
-        with:
-          enablement: true
+        # We do NOT pass `enablement: true` here: the integration token
+        # typically lacks privilege to create a Pages site. The repo
+        # owner must enable Pages in Settings -> Pages first; this
+        # step then just queries the existing config.
 
       - name: Stage site
         # Promote wiki/index.html to the top-level so the deployed URL

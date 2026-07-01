@@ -324,6 +324,25 @@ Maintainer notes: tagging, artefacts, hotfixes — `RELEASING.md`.
 The release pipeline itself is automated via
 `.github/workflows/release.yml`.
 
+## Configure Pages for the docs site (one-time)
+
+`.github/workflows/pages.yml` publishes `wiki/` to GitHub Pages on every
+push to `main`. The integration token cannot create a Pages site on its
+own, so a repo admin must enable it by hand once:
+
+1. **Settings → Pages → Source: "GitHub Actions"**
+2. Approve the workflow when it asks to write to the `github-pages`
+   environment on the first run.
+3. Push to `main`. The first successful run publishes
+   `https://<owner>.github.io/<repo>/` and that URL renders
+   `wiki/index.html` (combined landing + user + dev + arch).
+
+If the workflow fails with `Create Pages site failed: Resource not
+accessible by integration`, it means the integration token lacks the
+admin scope to enable Pages. The fix is the same as above — repo
+admin enables Pages in Settings → Pages first; the workflow's `pages:
+write` permission then has something to write to.
+
 ## Wiki
 
 HTML documentation ships in `wiki/` as static, self-contained files (no
