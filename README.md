@@ -323,8 +323,9 @@ them from the repo root:
 | Uninstall (clean slate) | `git clean -fdx` then `rm -f ~/Desktop/Open*SEO*Checker.{app,desktop,lnk,bat}` | Drops the desktop shortcut, the build artefacts, and the install state. Keep the source tree. |
 | Hard reset (Playwright cache) | `pnpm cache delete playwright && pnpm install` | Reinstalls Chromium cleanly if the JS-rendering browser gets corrupted. |
 
-The full troubleshooting matrix is in the wiki's install section
-([docs/index.html](docs/index.html), [user-guide.html](docs/user-guide.html)).
+The full troubleshooting matrix is in the
+[install section of the docs site](docs/index.html), with the deep
+flows in [user-guide.html](docs/user-guide.html).
 
 ## Releasing
 
