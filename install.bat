@@ -70,18 +70,32 @@ for /f "tokens=*" %%v in ('pnpm --version') do set PNPM_VER=%%v
 echo   [ok] pnpm %PNPM_VER%
 echo.
 
+rem Detect release bundle: prebuilt artefacts + workspace files, no source code.
+set "IS_BUNDLE=0"
+if exist package.json if exist pnpm-workspace.yaml if exist public\index.html if exist packages\api\dist\index.js if not exist packages\api\src set "IS_BUNDLE=1"
+
 rem ---- Step 2: install ------------------------------------------------------
-echo Step 2/4  Installing workspace dependencies
-echo            (this also installs Playwright Chromium for JS rendering)
-echo.
-call pnpm install
+if "%IS_BUNDLE%"=="1" (
+  echo Step 2/4  Installing production dependencies
+  echo            Release bundle detected — installing production dependencies.
+  echo.
+  call pnpm install --prod
+) else (
+  echo Step 2/4  Installing workspace dependencies
+  echo            (this also installs Playwright Chromium for JS rendering)
+  echo.
+  call pnpm install
+)
 if errorlevel 1 goto :end_fail
 echo.
 
 rem ---- Step 3: build --------------------------------------------------------
 echo Step 3/4  Building API + dashboard
-echo.
-call pnpm build
+if "%IS_BUNDLE%"=="1" (
+  echo            Release bundle detected — skipping build.
+) else (
+  call pnpm build
+)
 if errorlevel 1 goto :end_fail
 echo.
 

@@ -17,8 +17,11 @@ if [ ! -f public/index.html ] || [ ! -f packages/api/dist/index.js ]; then
 fi
 
 # Start the server (it serves both the API on /api/* and the React SPA from public/).
-pnpm --filter @oseo/api exec oseo serve --port 7437 &
+# Running from packages/api/dist/ lets Node resolve dependencies from the
+# package's own node_modules (works for both release bundles and workspaces).
+node packages/api/dist/index.js serve --port 7437 &
 SERVER_PID=$!
+
 sleep 2
 
 # Try to open the dashboard in a browser.

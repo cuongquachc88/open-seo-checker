@@ -100,15 +100,34 @@ if [ "$node_ok" -ne 1 ] || [ "$pnpm_ok" -ne 1 ]; then
   exit 1
 fi
 
+# Release bundles ship with prebuilt public/ and packages/api/dist/ artefacts
+# plus the workspace package files, but no node_modules and no source code.
+# We install only production dependencies (native modules are built for the
+# target platform) and skip the build step because the bundle is already
+# compiled.
+IS_BUNDLE=0
+if [ -f package.json ] && [ -f pnpm-workspace.yaml ] && [ -f public/index.html ] && [ -f packages/api/dist/index.js ] && [ ! -d packages/api/src ]; then
+  IS_BUNDLE=1
+fi
+
 # ----- Step 2: pnpm install ---------------------------------------------------
 printf "\n${BLUE}\xE2\x86\x92 Step 2/4  Installing workspace dependencies${RESET}\n"
-printf "${DIM}    (also installs Playwright Chromium for JS rendering)${RESET}\n"
-pnpm install
+if [ "$IS_BUNDLE" -eq 1 ]; then
+  printf "${DIM}    Release bundle detected — installing production dependencies.${RESET}\n"
+  pnpm install --prod
+else
+  printf "${DIM}    (also installs Playwright Chromium for JS rendering)${RESET}\n"
+  pnpm install
+fi
 echo
 
 # ----- Step 3: build ----------------------------------------------------------
 printf "${BLUE}\xE2\x86\x92 Step 3/4  Building API + dashboard${RESET}\n"
-pnpm build
+if [ "$IS_BUNDLE" -eq 1 ]; then
+  printf "${DIM}    Release bundle detected — skipping build.${RESET}\n"
+else
+  pnpm build
+fi
 echo
 
 # ----- Step 4: shortcut -------------------------------------------------------

@@ -41,7 +41,9 @@ else
   DOWNLOAD_URL="https://github.com/${OSE_OWNER}/${OSE_REPO}/releases/download/${OSE_VERSION}/${OSE_ASSET}"
 fi
 
-# Top-level folder inside the archive (matches the release.yml staging dir).
+# Preferred top-level folder inside the archive. The release workflow may
+# package files either inside an open-seo-checker/ folder or at the root of
+# the tarball; we accept both layouts.
 TARBALL_ROOT="open-seo-checker"
 
 # --- Banner ----------------------------------------------------------------
@@ -69,7 +71,7 @@ trap cleanup EXIT INT TERM
 
 # --- Download --------------------------------------------------------------
 printf "  →  Downloading %s\n" "$DOWNLOAD_URL"
-if ! curl --fail-with-body -fsSL --retry 3 --connect-timeout 15 \
+if ! curl -fsSL --retry 3 --connect-timeout 15 \
        -o "$TARGET/bundle" "$DOWNLOAD_URL"; then
   printf "\n  ${RED:-}download failed${RESET:-}\n" >&2
   printf "  Check that %s/%s has a release asset named %s.\n" \
@@ -88,10 +90,13 @@ case "$OSE_ASSET" in
     exit 1 ;;
 esac
 
-ROOT="$TARGET/$TARBALL_ROOT"
-if [ ! -d "$ROOT" ] || [ ! -f "$ROOT/install.sh" ]; then
+if [ -d "$TARGET/$TARBALL_ROOT" ] && [ -f "$TARGET/$TARBALL_ROOT/install.sh" ]; then
+  ROOT="$TARGET/$TARBALL_ROOT"
+elif [ -f "$TARGET/install.sh" ]; then
+  ROOT="$TARGET"
+else
   printf "\n  ${RED:-}unexpected archive layout${RESET:-}\n" >&2
-  printf "  expected %s/install.sh, got top-level dirs:\n" "$TARBALL_ROOT" >&2
+  printf "  expected %s/install.sh or install.sh at archive root\n" "$TARBALL_ROOT" >&2
   ls -1 "$TARGET" >&2
   exit 1
 fi

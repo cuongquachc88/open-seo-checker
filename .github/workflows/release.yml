@@ -78,14 +78,26 @@ jobs:
           OUTPUT="output"
           rm -rf "$STAGE" "$OUTPUT"
           mkdir -p "$STAGE" "$OUTPUT"
-          # Public artefact paths
+          # Public artefact paths. Keep the compiled API under packages/api/dist
+          # so the launcher can resolve dependencies from packages/api/node_modules.
           cp -R public                  "$STAGE/public"
-          cp -R packages/api/dist       "$STAGE/dist"
+          mkdir -p "$STAGE/packages/api"
+          cp -R packages/api/dist       "$STAGE/packages/api/dist"
           cp    install.sh              "$STAGE/install.sh"
           cp    install.bat             "$STAGE/install.bat"
           cp    open-seo-checker.sh     "$STAGE/open-seo-checker.sh"
           cp    open-seo-checker.bat    "$STAGE/open-seo-checker.bat"
           cp    start.sh                "$STAGE/start.sh"
+          # Workspace files so pnpm install --prod can resolve dependencies
+          # on the user's machine (native modules like better-sqlite3 are built
+          # for the target platform at install time).
+          mkdir -p "$STAGE/packages/web" "$STAGE/scripts"
+          cp    package.json            "$STAGE/package.json"
+          cp    pnpm-workspace.yaml     "$STAGE/pnpm-workspace.yaml"
+          cp    pnpm-lock.yaml          "$STAGE/pnpm-lock.yaml"
+          cp    packages/api/package.json "$STAGE/packages/api/package.json"
+          cp    packages/web/package.json "$STAGE/packages/web/package.json"
+          cp    scripts/postinstall.mjs "$STAGE/scripts/postinstall.mjs"
           chmod +x "$STAGE/install.sh" "$STAGE/open-seo-checker.sh" "$STAGE/start.sh"
           # Build both archive formats into ./output/ — never anywhere else.
           (cd "$STAGE" && tar czf "$GITHUB_WORKSPACE/$OUTPUT/open-seo-checker.tar.gz" .)
