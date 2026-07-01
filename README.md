@@ -1,8 +1,8 @@
 # Open SEO Checker
 
-A free, open-source, cross-platform website crawler and SEO auditing tool that
-replicates the core features of **Screaming Frog SEO Spider** and adds many
-capabilities that Screaming Frog does not have.
+A free, open-source, cross-platform website crawler and SEO auditing tool with a
+local CLI and a built-in dashboard. Run audits, score content, configure AI
+providers, schedule recurring crawls.
 
 - **CLI + Web UI**: One command launches a local web server and opens your browser.
 - **No crawl limits**: Completely free, no paid tiers, no URL restrictions.
@@ -13,10 +13,31 @@ capabilities that Screaming Frog does not have.
 
 > Documentation lives in two places:
 >   - This README — quickstart, features, project layout, API surface.
->   - `wiki/` — HTML guides for users (running the tool) and developers
->     (extending it). Open `wiki/index.html` directly in your browser.
+>   - `wiki/index.html` — combined landing + user + dev + architecture guide
+>     shippable as a single self-contained HTML file (also published to
+>     GitHub Pages by `.github/workflows/pages.yml`).
+
+## Install
+
+Run **once**. The installer handles prerequisites (Node ≥ 18, pnpm),
+installs workspace dependencies (including Playwright Chromium for JS
+rendering), builds the API and the dashboard, and **drops a desktop
+shortcut that starts the server and opens the dashboard with a single
+double-click**. Re-run any time to refresh the shortcut or rebuild.
+
+| Platform | Command | Desktop shortcut |
+|----------|---------|------------------|
+| **macOS** | `./install.sh` *(or `bash install.sh`)* | `~/Desktop/Open SEO Checker.app` (Finder opens it like any app → Terminal.app starts the server) |
+| **Linux** | `./install.sh` *(or `bash install.sh`)* | `~/.local/share/applications/` or `~/Desktop/Open SEO Checker.desktop` (XDG entry) |
+| **Windows** | `install.bat` *(or double-click it in Explorer)* | `%USERPROFILE%\Desktop\Open SEO Checker.lnk` (real .lnk with custom icon) |
+
+If the prerequisites are missing, the installer prints install hints per OS
+(`brew install node@20`, `winget install OpenJS.NodeJS.LTS`, `nvm install 20`,
+…) before exiting. Re-running is a no-op if the build is up-to-date.
 
 ## Quick Start
+
+If you'd rather drive it manually:
 
 ```bash
 git clone <this-repo>
@@ -111,12 +132,16 @@ open-seo-checker/                        ← @oseo/workspace  (orchestrator only
 
 ├── public/                              ← SPA build output (gitignored)
 ├── crawls/  exports/                    ← runtime artefacts (gitignored)
-├── wiki/                                ← HTML doc (user + dev guide)
+├── wiki/                                ← HTML doc (landing + user + dev + arch)
+├── .github/
+│   └── workflows/
+│       └── pages.yml                    ← GitHub Pages deploy of wiki/
 ├── scripts/
 │   ├── start.sh                         ← single-command BE+FE orchestrator
 │   ├── monitor.sh                       ← second-screen tailer for start.sh logs
 │   └── postinstall.mjs                  ← installs Playwright Chromium
 ├── open-seo-checker.sh  /  .bat         ← one-click launcher
+├── install.sh  /  install.bat           ← one-command installer + desktop shortcut
 └── README.md, PLAN.md
 ```
 
@@ -173,7 +198,7 @@ Top-level features:
 
 ## Features
 
-### Screaming Frog parity
+### Core audits
 
 - **Crawl Engine**: Spider + list mode, robots.txt compliance, custom
   user-agent, crawl depth, concurrency, redirects (now followed
@@ -195,7 +220,7 @@ Top-level features:
 - **Export**: CSV, JSON, XLSX, XML sitemaps, crawl comparison,
   scheduling.
 
-### Beyond Screaming Frog
+### Workflow extensions
 
 - **Log File Analysis**: Parse server logs to find bot crawl behavior,
   orphan URLs, and crawl budget waste.
@@ -285,16 +310,19 @@ options:
 
 ## Wiki
 
-HTML documentation ships in `wiki/`:
+HTML documentation ships in `wiki/` as static, self-contained files (no
+JS frameworks, no CDN — works offline via `file://`):
 
-- `wiki/index.html` — hub linking user and dev guides.
-- `wiki/user-guide.html` — how a user runs and operates the dashboard.
-- `wiki/dev-guide.html` — extension points, conventions, tests.
-- `wiki/architecture.html` — system layout, data flow, decision log.
+- `wiki/index.html` — combined landing page **and** the full user, dev,
+  and architecture guide in one anchor-jumpable page.
+- `wiki/user-guide.html` — same content as a 10-section standalone page.
+- `wiki/dev-guide.html` — same content as an 8-section standalone page.
+- `wiki/architecture.html` — same content as a 5-section standalone page.
 
-Open `wiki/index.html` in your browser; both guides are hosted as static
-HTML so they can be served from any web server (or even double-clicked
-locally without one).
+`.github/workflows/pages.yml` publishes `wiki/` to GitHub Pages on every
+push to `main`. Enable Pages in the repo settings (Source: "GitHub
+Actions") and the workflow will deploy the docs site to
+`https://<owner>.github.io/<repo>/`.
 
 ## License
 
