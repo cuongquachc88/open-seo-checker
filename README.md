@@ -133,8 +133,6 @@ open-seo-checker/                        ← @oseo/workspace  (orchestrator only
 ├── public/                              ← SPA build output (gitignored)
 ├── crawls/  exports/                    ← runtime artefacts (gitignored)
 ├── wiki/                                ← HTML doc (landing + user + dev + arch)
-├── docs/
-│   └── INSTALL.md                       ← deep-dive install + troubleshooting
 ├── .github/
 │   └── workflows/
 │       ├── pages.yml                    ← GitHub Pages deploy of wiki/
@@ -314,9 +312,10 @@ options:
 
 ## Install (deep-dive)
 
-Need more than the `## Install` section above? `docs/INSTALL.md`
-covers prerequisites per OS, troubleshooting, the uninstall flow,
-and how to verify the install runs from a clean `curl`.
+Need more than the `## Install` section above? The
+[wiki install section](wiki/index.html) covers prerequisites per
+OS, troubleshooting, the uninstall flow, and how to verify a
+clean install runs from a fresh `curl`.
 
 ## Releasing
 
