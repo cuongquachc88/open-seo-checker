@@ -17,6 +17,17 @@ We follow [Semantic Versioning](https://semver.org/).
 The version is also written into `packages/api/package.json`. The
 release workflow stamps it into the build manifest automatically.
 
+## Tag conventions
+
+The release workflow accepts two tag shapes. Both produce the same
+artefacts; the `release-` prefix is stripped from the GitHub Release
+title so the published release is still named `v0.X.Y`.
+
+- `v0.X.Y` — plain semver tag (e.g. `v0.1.0`).
+- `release-v0.X.Y` — explicit release tag (e.g. `release-v0.1.0`).
+  Use this when you want the tag itself to say "release" while the
+  published release keeps the clean version name.
+
 ## Local release checklist
 
 Before tagging, run the full test gate locally:
@@ -30,10 +41,17 @@ PW_BOOT=1 pnpm test:e2e   # playwright suite (auto-spawns dev orchestrator)
 ```
 
 If everything is green, commit any pending changes in atomic,
-feature-grouped commits (the repo convention). Then:
+feature-grouped commits (the repo convention). Then push either tag
+shape:
 
 ```bash
+# Option A: plain semver tag
 git tag v0.X.Y
+git push origin main --tags
+
+# Option B: explicit release tag (release- prefix is stripped from the
+#           GitHub Release title, so the release is still named v0.X.Y)
+git tag release-v0.X.Y
 git push origin main --tags
 ```
 

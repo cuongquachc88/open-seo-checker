@@ -1,15 +1,16 @@
 name: Release
 
 # ------------------------------------------------------------------------------
-#  Builds source and binary bundles on every pushed tag matching v*, and
-#  publishes a GitHub Release with auto-generated notes.
+#  Builds source and binary bundles on every pushed tag matching v*.*.* or
+#  release-v*.*.*, and publishes a GitHub Release with auto-generated notes.
 #
-#    Tag         Result
-#    ----------  ---------------------------------------------------
-#    v0.1.0      Release "v0.1.0" published with assets:
-#                  · open-seo-checker.zip       (Windows-friendly)
-#                  · open-seo-checker.tar.gz    (macOS / Linux)
-#    v0.1.1      Hotfix release same shape
+#    Tag              Result
+#    ---------------  ---------------------------------------------------
+#    v0.1.0           Release "v0.1.0" published with assets:
+#                       · open-seo-checker.zip       (Windows-friendly)
+#                       · open-seo-checker.tar.gz    (macOS / Linux)
+#    release-v0.1.0   Same release, named "v0.1.0" (release- prefix
+#                       is stripped from the GitHub Release title)
 #
 #  The workflow does NOT run the e2e suite (tag is trusted because main
 #  is always green); instead it does a fast lint + unit-test gate.
@@ -19,6 +20,7 @@ on:
   push:
     tags:
       - 'v*.*.*'
+      - 'release-v*.*.*'
   workflow_dispatch:
 
 # Allow only one concurrent release run.
@@ -99,15 +101,24 @@ jobs:
           ls -la "$OUTPUT"
           rm -rf "$STAGE"
 
+      - name: Compute release name
+        id: release_name
+        run: |
+          TAG="${{ github.ref_name }}"
+          NAME="${TAG#release-}"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+          echo "Release name: $NAME (from tag $TAG)"
+
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          name: ${{ github.ref_name }}
+          name: ${{ steps.release_name.outputs.name }}
           generate_release_notes: true
           draft: false
-          prerelease: ${{ contains(github.ref_name, '-') }}
+          prerelease: ${{ contains(steps.release_name.outputs.name, '-') }}
           body: |
-            ## ${{ github.ref_name }}
+            ## ${{ steps.release_name.outputs.name }}
 
             Self-contained bundles of Open SEO Checker at this tag.
 
