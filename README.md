@@ -1,7 +1,13 @@
 # Open SEO Checker
 
+**macOS / Linux**
 ```bash
 curl -fsSL https://raw.githubusercontent.com/cuongquachc88/open-seo-checker/main/scripts/install-from-release.sh | bash
+```
+
+**Windows** (PowerShell)
+```powershell
+curl -fsSL https://raw.githubusercontent.com/cuongquachc88/open-seo-checker/main/scripts/install-from-release.bat -o install-from-release.bat && install-from-release.bat
 ```
 
 A free, open-source, cross-platform website crawler and SEO auditing tool with a
