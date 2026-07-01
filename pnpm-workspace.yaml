@@ -1,3 +1,12 @@
 packages:
   - 'packages/api'
   - 'packages/web'
+
+# pnpm v11 requires explicit approval per-package for native / postinstall
+# build scripts. These two packages have native build scripts that the
+# project depends on (SQLite + esbuild bundler). Listing them here is
+# the canonical v11 replacement for the legacy top-level
+# `pnpm.onlyBuiltDependencies` array in package.json.
+allowBuilds:
+  better-sqlite3: true
+  esbuild: true
