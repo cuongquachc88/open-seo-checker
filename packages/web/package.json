@@ -2,6 +2,7 @@
   "name": "@oseo/web",
   "private": true,
   "version": "0.1.0",
+  "license": "MIT",
   "description": "React + Vite dashboard for Open SEO Checker.",
   "type": "module",
   "scripts": {

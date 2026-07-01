@@ -57,6 +57,19 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Stamp version from tag
+        # Strip the optional "release-" prefix and "v" prefix to get bare semver,
+        # then write it into all three package.json files so the build artifacts,
+        # sidebar, and API /health endpoint all report the same version.
+        # TAG is passed via env: (not interpolated inline) to prevent injection.
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          VERSION="${TAG#release-}"
+          VERSION="${VERSION#v}"
+          echo "Stamping version $VERSION (from tag $TAG)"
+          node scripts/version-bump.mjs "$VERSION"
+
       - name: Lint
         run: pnpm lint
 
@@ -115,8 +128,9 @@ jobs:
 
       - name: Compute release name
         id: release_name
+        env:
+          TAG: ${{ github.ref_name }}
         run: |
-          TAG="${{ github.ref_name }}"
           NAME="${TAG#release-}"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "name=$NAME" >> "$GITHUB_OUTPUT"

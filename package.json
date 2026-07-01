@@ -31,7 +31,8 @@
     "test:unit": "pnpm --filter @oseo/api test",
     "test:e2e": "playwright test --config=playwright.config.ts",
     "lint": "pnpm -r --filter \"./packages/*\" lint",
-    "postinstall": "node scripts/postinstall.mjs"
+    "postinstall": "node scripts/postinstall.mjs",
+    "version:bump": "node scripts/version-bump.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.61.0",

@@ -14,7 +14,7 @@ import {
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { BrandMark } from '@/components/brand/BrandMark';
-import rootPackage from '../../../../../package.json';
+import rootPackage from '../../../package.json';
 
 interface NavItem {
   to: string;
