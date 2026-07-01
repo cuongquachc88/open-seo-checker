@@ -72,4 +72,36 @@ test.describe('Dashboard SPA', () => {
     await page.waitForURL(/\/settings$/);
     await expect(page.locator('h1').first()).toBeVisible();
   });
+
+  // ----- Full sidebar sweep -------------------------------------------------
+  // Each test starts from `/` and clicks the corresponding sidebar item.
+  // Verifies URL + h1 rendered and tracks console health.
+  const SIDEBAR_ROUTES: Array<{ label: string; urlPattern: RegExp }> = [
+    { label: 'Dashboard',     urlPattern: /\/$/ },
+    { label: 'New Crawl',     urlPattern: /\/crawl$/ },
+    { label: 'Crawl Runs',    urlPattern: /\/runs$/ },
+    { label: 'Sitemap Studio', urlPattern: /\/sitemap$/ },
+    { label: 'Compare Runs',  urlPattern: /\/compare$/ },
+    { label: 'AI Insights',   urlPattern: /\/insights$/ },
+    { label: 'Reports',       urlPattern: /\/reports$/ },
+    { label: 'Settings',      urlPattern: /\/settings$/ },
+  ];
+
+  for (const route of SIDEBAR_ROUTES) {
+    test(`clicking ${route.label} navigates to ${route.urlPattern}`, async ({ page }) => {
+      const errors: string[] = [];
+      page.on('console', m => {
+        if (m.type() === 'error') errors.push(m.text());
+      });
+      page.on('pageerror', e => errors.push(`pageerror: ${e.message}`));
+
+      await page.goto('/');
+      await page.locator('aside').getByText(route.label).first().click();
+      await page.waitForURL(route.urlPattern);
+      await expect(page.locator('h1').first()).toBeVisible();
+
+      const real = errors.filter(e => !e.includes('same key'));
+      expect(real).toEqual([]);
+    });
+  }
 });
