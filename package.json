@@ -36,12 +36,11 @@
   "devDependencies": {
     "@playwright/test": "^1.61.0",
     "@types/node": "^22.14.0",
-    "@typescript-eslint/eslint-plugin": "^8.29.1",
-    "@typescript-eslint/parser": "^8.29.1",
     "concurrently": "^10.0.3",
     "eslint": "^9.24.0",
     "tsx": "^4.19.3",
     "typescript": "^5.8.3",
+    "typescript-eslint": "^8.29.1",
     "vitest": "^3.1.1"
   },
   "pnpm": {
