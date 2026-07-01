@@ -168,14 +168,10 @@ generate_macos_icon() {
 
 create_macos_shortcut() {
   # Real .app bundle in /Applications so Finder shows it like any other app.
-  # Falls back to the user's Desktop if /Applications is not writable.
   local app_dir="/Applications/Open SEO Checker.app"
   if [ ! -w "/Applications" ] && ! mkdir -p "/Applications" 2>/dev/null; then
-    local desktop="$HOME/Desktop"
-    if [ ! -d "$desktop" ]; then
-      mkdir -p "$desktop" 2>/dev/null || desktop="$HOME"
-    fi
-    app_dir="$desktop/Open SEO Checker.app"
+    printf "${RED}\xE2\x9C\x97${RESET}  Cannot write to /Applications. Run with sudo or grant permission.\n"
+    return 1
   fi
   local macos_dir="$app_dir/Contents/MacOS"
   local resources_dir="$app_dir/Contents/Resources"
