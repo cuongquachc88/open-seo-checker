@@ -13,9 +13,10 @@ providers, schedule recurring crawls.
 
 > Documentation lives in two places:
 >   - This README — quickstart, features, project layout, API surface.
->   - `wiki/index.html` — combined landing + user + dev + architecture guide
->     shippable as a single self-contained HTML file (also published to
->     GitHub Pages by `.github/workflows/pages.yml`).
+>   - `docs/index.html` — the product landing page published to GitHub
+>     Pages by `.github/workflows/pages.yml`. Deep-dive content lives
+>     alongside it as `docs/user-guide.html`, `docs/dev-guide.html`,
+>     and `docs/architecture.html`.
 
 ## Install
 
@@ -132,10 +133,10 @@ open-seo-checker/                        ← @oseo/workspace  (orchestrator only
 
 ├── public/                              ← SPA build output (gitignored)
 ├── crawls/  exports/                    ← runtime artefacts (gitignored)
-├── wiki/                                ← HTML doc (landing + user + dev + arch)
+├── docs/                                ← HTML landing + user/dev/arch guides
 ├── .github/
 │   └── workflows/
-│       ├── pages.yml                    ← GitHub Pages deploy of wiki/
+│       ├── pages.yml                    ← GitHub Pages deploy of docs/
 │       └── release.yml                  ← tag-driven GitHub Release workflow
 ├── scripts/
 │   ├── start.sh                         ← single-command BE+FE orchestrator
@@ -313,9 +314,10 @@ options:
 ## Install (deep-dive)
 
 Need more than the `## Install` section above? The
-[wiki install section](wiki/index.html) covers prerequisites per
-OS, troubleshooting, the uninstall flow, and how to verify a
-clean install runs from a fresh `curl`.
+[install section in `docs/index.html`](docs/index.html) and the
+[user guide](docs/user-guide.html) cover prerequisites per OS,
+troubleshooting, the uninstall flow, and how to verify a clean
+install runs from a fresh `curl`.
 
 ## Releasing
 
@@ -325,7 +327,7 @@ The release pipeline itself is automated via
 
 ## Configure Pages for the docs site (one-time)
 
-`.github/workflows/pages.yml` publishes `wiki/` to GitHub Pages on every
+`.github/workflows/pages.yml` publishes `docs/` to GitHub Pages on every
 push to `main`. The integration token cannot create a Pages site on its
 own, so a repo admin must enable it by hand once:
 
@@ -334,7 +336,7 @@ own, so a repo admin must enable it by hand once:
    environment on the first run.
 3. Push to `main`. The first successful run publishes
    `https://<owner>.github.io/<repo>/` and that URL renders
-   `wiki/index.html` (combined landing + user + dev + arch).
+   `docs/index.html` (the product landing page).
 
 If the workflow fails with `Create Pages site failed: Resource not
 accessible by integration`, it means the integration token lacks the
@@ -342,18 +344,19 @@ admin scope to enable Pages. The fix is the same as above — repo
 admin enables Pages in Settings → Pages first; the workflow's `pages:
 write` permission then has something to write to.
 
-## Wiki
+## Docs
 
-HTML documentation ships in `wiki/` as static, self-contained files (no
-JS frameworks, no CDN — works offline via `file://`):
+HTML documentation ships in `docs/` as static, self-contained files
+(no JS frameworks, no CDN — works offline via `file://`):
 
-- `wiki/index.html` — combined landing page **and** the full user, dev,
-  and architecture guide in one anchor-jumpable page.
-- `wiki/user-guide.html` — same content as a 10-section standalone page.
-- `wiki/dev-guide.html` — same content as an 8-section standalone page.
-- `wiki/architecture.html` — same content as a 5-section standalone page.
+- `docs/index.html` — the product landing page (hero, feature grid,
+  install CTA, link out to the deep guides below).
+- `docs/user-guide.html` — 10-section user guide for the dashboard.
+- `docs/dev-guide.html` — 8-section developer guide for the API and
+  CLI surfaces.
+- `docs/architecture.html` — 5-section architecture reference.
 
-`.github/workflows/pages.yml` publishes `wiki/` to GitHub Pages on every
+`.github/workflows/pages.yml` publishes `docs/` to GitHub Pages on every
 push to `main`. Enable Pages in the repo settings (Source: "GitHub
 Actions") and the workflow will deploy the docs site to
 `https://<owner>.github.io/<repo>/`.

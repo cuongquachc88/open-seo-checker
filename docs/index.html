@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="auto">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Open SEO Checker — local, open-source website auditing</title>
+  <meta name="description" content="Open SEO Checker is an open-source, cross-platform SEO auditing tool with a self-hosted dashboard. Install with one command on macOS, Linux, or Windows.">
+  <meta name="theme-color" content="#0a0e1a">
+  <meta property="og:title" content="Open SEO Checker">
+  <meta property="og:description" content="Local, open-source website auditing with a self-hosted dashboard. One-command install. No accounts. No cloud.">
+  <meta property="og:type" content="website">
+  <style>
+    /* ----------  Tokens  ---------- */
+    :root {
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                   "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo,
+                   Consolas, "Liberation Mono", monospace;
+
+      --radius-sm: 8px;
+      --radius:    12px;
+      --radius-lg: 18px;
+
+      --easing: cubic-bezier(.2,.7,.2,1);
+    }
+
+    html[data-theme="light"] {
+      --bg:         #f8fafc;
+      --bg-elev:    #ffffff;
+      --bg-soft:    rgba(99,102,241,.06);
+      --border:     rgba(15,23,42,.08);
+      --border-strong: rgba(15,23,42,.14);
+      --text:       #0f172a;
+      --text-mute:  #475569;
+      --text-dim:   #64748b;
+      --brand-1:    #6366f1;
+      --brand-2:    #a855f7;
+      --brand-tint: rgba(99,102,241,.10);
+      --code-bg:    #0f172a;
+      --code-fg:    #e2e8f0;
+      --shadow-sm:  0 1px 2px rgba(15,23,42,.06);
+      --shadow:     0 8px 24px -10px rgba(15,23,42,.18);
+      --shadow-lg:  0 24px 60px -20px rgba(15,23,42,.30);
+      color-scheme: light;
+    }
+
+    html[data-theme="dark"], html[data-theme="auto"] {
+      --bg:         #0a0e1a;
+      --bg-elev:    #111827;
+      --bg-soft:    rgba(99,102,241,.10);
+      --border:     rgba(148,163,184,.12);
+      --border-strong: rgba(148,163,184,.22);
+      --text:       #e2e8f0;
+      --text-mute:  #94a3b8;
+      --text-dim:   #64748b;
+      --brand-1:    #818cf8;
+      --brand-2:    #c084fc;
+      --brand-tint: rgba(129,140,248,.14);
+      --code-bg:    #0b1020;
+      --code-fg:    #e2e8f0;
+      --shadow-sm:  0 1px 2px rgba(0,0,0,.4);
+      --shadow:     0 8px 24px -10px rgba(0,0,0,.55);
+      --shadow-lg:  0 24px 60px -20px rgba(0,0,0,.7);
+      color-scheme: dark;
+    }
+
+    @media (prefers-color-scheme: light) {
+      html[data-theme="auto"] {
+        --bg:         #f8fafc;
+        --bg-elev:    #ffffff;
+        --bg-soft:    rgba(99,102,241,.06);
+        --border:     rgba(15,23,42,.08);
+        --border-strong: rgba(15,23,42,.14);
+        --text:       #0f172a;
+        --text-mute:  #475569;
+        --text-dim:   #64748b;
+        --brand-1:    #6366f1;
+        --brand-2:    #a855f7;
+        --brand-tint: rgba(99,102,241,.10);
+        --code-bg:    #0f172a;
+        --code-fg:    #e2e8f0;
+        --shadow-sm:  0 1px 2px rgba(15,23,42,.06);
+        --shadow:     0 8px 24px -10px rgba(15,23,42,.18);
+        --shadow-lg:  0 24px 60px -20px rgba(15,23,42,.30);
+        color-scheme: light;
+      }
+    }
+
+    /* ----------  Base  ---------- */
+    *,*::before,*::after { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; scroll-padding-top: 80px; }
+    body {
+      margin: 0;
+      font-family: var(--font-sans);
+      font-size: 16px;
+      line-height: 1.6;
+      background: var(--bg);
+      color: var(--text);
+      transition: background-color .25s var(--easing), color .25s var(--easing);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    h1,h2,h3,h4 { margin: 0; line-height: 1.2; letter-spacing: -.015em; font-weight: 700; color: var(--text); }
+    h1 { font-size: clamp(2.4rem, 5.2vw, 3.75rem); line-height: 1.05; letter-spacing: -.03em; }
+    h2 { font-size: clamp(1.75rem, 3.2vw, 2.25rem); }
+    h3 { font-size: 1.15rem; }
+    p  { margin: 0; color: var(--text); }
+    small { color: var(--text-dim); font-size: .82rem; }
+    a  { color: var(--brand-1); text-decoration: none; transition: color .2s var(--easing); }
+    a:hover { color: var(--brand-2); }
+
+    /* ----------  Layout  ---------- */
+    .wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+
+    /* ----------  Top nav  ---------- */
+    .nav {
+      position: sticky; top: 0; z-index: 50;
+      background: color-mix(in srgb, var(--bg) 88%, transparent);
+      backdrop-filter: saturate(140%) blur(14px);
+      -webkit-backdrop-filter: saturate(140%) blur(14px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-row { display: flex; align-items: center; gap: 24px; height: 64px; }
+    .brand {
+      display: inline-flex; align-items: center; gap: 10px;
+      font-weight: 700; font-size: 1.05rem; color: var(--text);
+      letter-spacing: -.01em;
+    }
+    .brand-logo {
+      width: 28px; height: 28px; border-radius: 8px;
+      background: linear-gradient(135deg, var(--brand-1), var(--brand-2));
+      box-shadow: 0 4px 14px -4px var(--brand-tint);
+      display: inline-flex; align-items: center; justify-content: center;
+      color: #fff;
+    }
+    .nav-links { display: flex; gap: 6px; margin-left: auto; align-items: center; }
+    .nav-links a {
+      color: var(--text-mute); padding: 8px 12px; border-radius: var(--radius-sm); font-size: .94rem;
+      font-weight: 500;
+    }
+    .nav-links a:hover { color: var(--text); background: var(--bg-soft); }
+    .nav-links .btn { color: #fff; }
+    .theme-toggle {
+      width: 36px; height: 36px; border-radius: 10px;
+      background: transparent; border: 1px solid var(--border);
+      color: var(--text-mute); cursor: pointer; padding: 0;
+      display: inline-flex; align-items: center; justify-content: center;
+      transition: background .2s var(--easing), color .2s var(--easing), border-color .2s var(--easing);
+    }
+    .theme-toggle:hover { color: var(--text); background: var(--bg-soft); border-color: var(--border-strong); }
+
+    /* ----------  Buttons  ---------- */
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 10px 16px; border-radius: 10px; font-weight: 600; font-size: .94rem;
+      line-height: 1; transition: transform .15s var(--easing), box-shadow .15s var(--easing),
+                  background-color .2s var(--easing), color .2s var(--easing), border-color .2s var(--easing);
+      border: 1px solid transparent; cursor: pointer; text-decoration: none;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--brand-1), var(--brand-2));
+      color: #fff;
+      box-shadow: 0 6px 18px -6px var(--brand-tint), inset 0 1px 0 rgba(255,255,255,.18);
+    }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 12px 28px -8px var(--brand-tint), inset 0 1px 0 rgba(255,255,255,.22); color: #fff; }
+    .btn-ghost { background: transparent; color: var(--text); border-color: var(--border-strong); }
+    .btn-ghost:hover { background: var(--bg-soft); color: var(--text); }
+
+    /* ----------  Hero  ---------- */
+    .hero { position: relative; padding: 88px 0 56px; overflow: hidden; }
+    .hero::before {
+      content: ""; position: absolute; inset: -10% 0 auto 0; height: 70%; pointer-events: none;
+      background:
+        radial-gradient(60% 80% at 20% 0%, var(--brand-tint), transparent 60%),
+        radial-gradient(60% 80% at 80% 0%, color-mix(in srgb, var(--brand-tint) 70%, transparent), transparent 60%);
+      filter: blur(8px);
+      z-index: 0;
+    }
+    .hero-inner { position: relative; z-index: 1; max-width: 760px; }
+    .eyebrow {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 6px 12px; border-radius: 999px;
+      background: var(--bg-soft); color: var(--text-mute);
+      border: 1px solid var(--border);
+      font-size: .82rem; font-weight: 600; letter-spacing: .02em;
+      text-transform: uppercase;
+    }
+    .eyebrow .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--brand-1); box-shadow: 0 0 0 4px var(--brand-tint); }
+    .hero h1 { margin: 22px 0 20px; }
+    .hero h1 .grad {
+      background: linear-gradient(120deg, var(--brand-1), var(--brand-2));
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+    .hero p.lede { font-size: clamp(1.05rem, 1.6vw, 1.18rem); color: var(--text-mute); max-width: 620px; }
+    .hero-actions { display: flex; gap: 12px; margin-top: 32px; flex-wrap: wrap; }
+
+    /* Hero code mockup */
+    .code-card {
+      margin-top: 40px;
+      background: var(--code-bg); color: var(--code-fg);
+      border-radius: var(--radius-lg);
+      padding: 18px 20px 20px;
+      box-shadow: var(--shadow-lg);
+      max-width: 720px;
+      border: 1px solid color-mix(in srgb, var(--brand-1) 20%, transparent);
+    }
+    .code-card .dots { display: flex; gap: 6px; margin-bottom: 14px; }
+    .code-card .dots span { width: 12px; height: 12px; border-radius: 50%; opacity: .85; }
+    .code-card .dots span:nth-child(1) { background: #ef4444; }
+    .code-card .dots span:nth-child(2) { background: #f59e0b; }
+    .code-card .dots span:nth-child(3) { background: #22c55e; }
+    .code-card pre {
+      margin: 0; font-family: var(--font-mono); font-size: .9rem; line-height: 1.7;
+      white-space: pre-wrap; overflow-wrap: anywhere;
+    }
+    .code-card .lin { color: #94a3b8; }
+    .code-card .cmd { color: #f0abfc; }
+    .code-card .ok  { color: #34d399; }
+
+    /* ----------  Logo strip (trust) ---------- */
+    .strip {
+      margin: 32px 0 8px;
+      display: flex; flex-wrap: wrap; gap: 20px 36px; align-items: center;
+      color: var(--text-dim); font-size: .84rem;
+    }
+    .strip strong { color: var(--text-mute); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; font-size: .75rem; }
+
+    /* ----------  Section  ---------- */
+    section { padding: 72px 0; }
+    .section-head { max-width: 640px; margin-bottom: 40px; }
+    .section-head .eyebrow { margin-bottom: 14px; }
+    .section-head p { color: var(--text-mute); margin-top: 12px; font-size: 1.04rem; }
+
+    /* ----------  Features grid  ---------- */
+    .features {
+      display: grid; gap: 18px;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    }
+    .feature {
+      position: relative;
+      padding: 24px;
+      background: var(--bg-elev);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      transition: transform .2s var(--easing), border-color .2s var(--easing), box-shadow .2s var(--easing);
+    }
+    .feature:hover {
+      transform: translateY(-2px);
+      border-color: var(--border-strong);
+      box-shadow: var(--shadow);
+    }
+    .feature .icon {
+      width: 40px; height: 40px; border-radius: 10px;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: var(--bg-soft); color: var(--brand-1);
+      margin-bottom: 16px;
+    }
+    .feature h3 { margin-bottom: 6px; }
+    .feature p  { color: var(--text-mute); font-size: .96rem; }
+
+    /* ----------  Steps  ---------- */
+    .steps {
+      display: grid; gap: 18px;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      counter-reset: step;
+    }
+    .step {
+      position: relative;
+      padding: 24px;
+      background: var(--bg-elev);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+    }
+    .step::before {
+      counter-increment: step;
+      content: counter(step, decimal-leading-zero);
+      position: absolute; top: 14px; right: 18px;
+      font-family: var(--font-mono); font-size: .8rem; color: var(--brand-1);
+      opacity: .8;
+    }
+    .step h3 { margin-bottom: 8px; }
+    .step p  { color: var(--text-mute); font-size: .95rem; }
+
+    /* ----------  Install tabs  ---------- */
+    .install {
+      background: var(--bg-elev);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--bg-soft); }
+    .tabs button {
+      flex: 1; padding: 14px 16px;
+      background: transparent; color: var(--text-mute);
+      border: none; border-bottom: 2px solid transparent;
+      font-family: inherit; font-size: .94rem; font-weight: 600; cursor: pointer;
+      transition: color .2s var(--easing), border-color .2s var(--easing), background .2s var(--easing);
+    }
+    .tabs button:hover { color: var(--text); }
+    .tabs button.active { color: var(--text); border-bottom-color: var(--brand-1); background: transparent; }
+    .panels { padding: 22px 22px 26px; }
+    .panel { display: none; }
+    .panel.active { display: block; }
+    .panel h3 { margin-bottom: 6px; }
+    .panel p  { color: var(--text-mute); font-size: .92rem; margin-bottom: 14px; }
+    .panel .row {
+      display: flex; align-items: stretch; gap: 0;
+      background: var(--code-bg); border-radius: var(--radius);
+      border: 1px solid color-mix(in srgb, var(--brand-1) 25%, transparent);
+      overflow: hidden;
+    }
+    .panel pre {
+      margin: 0; padding: 14px 16px; flex: 1;
+      font-family: var(--font-mono); font-size: .85rem; line-height: 1.6;
+      color: var(--code-fg); white-space: pre-wrap; overflow-wrap: anywhere;
+    }
+    .panel pre .ok  { color: #34d399; }
+    .panel pre .dim { color: #64748b; }
+    .panel pre .b   { color: #f0abfc; }
+    .panel .copy {
+      padding: 0 14px; border: none; background: transparent;
+      color: var(--text-mute); cursor: pointer;
+      border-left: 1px solid color-mix(in srgb, var(--brand-1) 25%, transparent);
+      font-family: inherit; font-size: .82rem; font-weight: 600;
+    }
+    .panel .copy:hover { color: var(--text); background: rgba(255,255,255,.04); }
+
+    .more-installs { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 10px; }
+    .more-installs a {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 12px; border-radius: 10px;
+      background: var(--bg-soft); color: var(--text-mute);
+      font-size: .88rem; font-weight: 500;
+      border: 1px solid var(--border);
+    }
+    .more-installs a:hover { color: var(--text); border-color: var(--border-strong); }
+
+    /* ----------  Use cases  ---------- */
+    .uses {
+      display: grid; gap: 16px;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    }
+    .use {
+      padding: 18px 20px;
+      background: var(--bg-elev);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text-mute); font-size: .96rem;
+    }
+    .use strong { color: var(--text); display: block; margin-bottom: 4px; font-weight: 600; }
+    .use .tag { display: inline-block; font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--brand-1); margin-bottom: 8px; }
+
+    /* ----------  CTA  ---------- */
+    .cta {
+      position: relative;
+      padding: 56px 40px;
+      background:
+        radial-gradient(60% 100% at 0% 0%, var(--brand-tint), transparent 70%),
+        radial-gradient(60% 100% at 100% 100%, color-mix(in srgb, var(--brand-tint) 70%, transparent), transparent 70%),
+        var(--bg-elev);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      text-align: center;
+    }
+    .cta h2 { font-size: clamp(1.6rem, 2.8vw, 2.1rem); }
+    .cta p  { color: var(--text-mute); margin-top: 12px; max-width: 520px; margin-left: auto; margin-right: auto; }
+    .cta .actions { margin-top: 26px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+    /* ----------  Footer  ---------- */
+    footer {
+      padding: 48px 0 56px;
+      border-top: 1px solid var(--border);
+      color: var(--text-dim); font-size: .9rem;
+      margin-top: 56px;
+    }
+    footer .row { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; justify-content: space-between; }
+    footer .links { display: flex; gap: 18px; flex-wrap: wrap; }
+    footer a { color: var(--text-mute); }
+    footer a:hover { color: var(--text); }
+
+    /* ----------  Responsive  ---------- */
+    @media (max-width: 640px) {
+      .hero { padding: 64px 0 40px; }
+      section { padding: 56px 0; }
+      .nav-links a.hide-sm { display: none; }
+      .cta { padding: 40px 20px; }
+      .tabs button { font-size: .85rem; padding: 12px 8px; }
+    }
+
+    /* ----------  Subtle reveal  ---------- */
+    @media (prefers-reduced-motion: no-preference) {
+      .reveal { opacity: 0; transform: translateY(8px); transition: opacity .6s var(--easing), transform .6s var(--easing); }
+      .reveal.in { opacity: 1; transform: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="nav" role="banner">
+    <div class="wrap nav-row">
+      <a class="brand" href="#top">
+        <span class="brand-logo" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="7"></circle>
+            <path d="m20 20-3.5-3.5"></path>
+            <path d="M11 8v6"></path>
+            <path d="M8 11h6"></path>
+          </svg>
+        </span>
+        Open SEO Checker
+      </a>
+      <nav class="nav-links" aria-label="Primary">
+        <a href="#features" class="hide-sm">Features</a>
+        <a href="#install" class="hide-sm">Install</a>
+        <a href="user-guide.html" class="hide-sm">User guide</a>
+        <a href="dev-guide.html" class="hide-sm">Dev guide</a>
+        <a href="architecture.html" class="hide-sm">Architecture</a>
+        <button class="theme-toggle" id="theme" aria-label="Toggle theme" title="Toggle theme">
+          <svg id="theme-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="4"></circle>
+            <path d="M12 2v2"></path><path d="M12 20v2"></path>
+            <path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path>
+            <path d="M2 12h2"></path><path d="M20 12h2"></path>
+            <path d="m4.93 19.07 1.41-1.41"></path><path d="m17.66 6.34 1.41-1.41"></path>
+          </svg>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <main id="top">
+
+    <!-- ======================  Hero  ====================== -->
+    <section class="hero">
+      <div class="wrap hero-inner">
+        <span class="eyebrow"><span class="dot"></span> v0.1 · open-source · runs on your machine</span>
+        <h1>Local-first website auditing, <span class="grad">without the cloud.</span></h1>
+        <p class="lede">Open SEO Checker is a self-hosted dashboard for crawling, auditing, and exporting
+          technical SEO data. One command installs it on macOS, Linux, or Windows.
+          No accounts. No telemetry. No SaaS lock-in.</p>
+
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="#install">
+            <span>Install now</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="m13 6 6 6-6 6"></path></svg>
+          </a>
+          <a class="btn btn-ghost" href="user-guide.html">Read the docs</a>
+          <a class="btn btn-ghost" href="https://github.com/cuongquachc88/open-seo-checker" rel="noopener" target="_blank">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56v-2c-3.2.69-3.88-1.36-3.88-1.36-.52-1.34-1.28-1.69-1.28-1.69-1.04-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.76 2.7 1.25 3.36.96.1-.75.4-1.25.73-1.54-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.29 1.18-3.1-.12-.29-.51-1.45.11-3.02 0 0 .97-.31 3.18 1.18.92-.26 1.91-.39 2.89-.39.98 0 1.97.13 2.89.39 2.21-1.49 3.18-1.18 3.18-1.18.62 1.57.23 2.73.11 3.02.74.81 1.18 1.84 1.18 3.1 0 4.42-2.7 5.39-5.27 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.68.8.56C20.21 21.39 23.5 17.08 23.5 12 23.5 5.65 18.35.5 12 .5Z"/></svg>
+            <span>View on GitHub</span>
+          </a>
+        </div>
+
+        <div class="code-card reveal" id="code-card">
+          <div class="dots" aria-hidden="true"><span></span><span></span><span></span></div>
+<pre><span class="lin">$</span> <span class="cmd">curl</span> -fsSL https://raw.githubusercontent.com/cuongquachc88/open-seo-checker/main/scripts/install-from-release.sh | <span class="cmd">bash</span>
+<span class="ok">✓ Open SEO Checker installed. Double-click the desktop shortcut to start.</span></pre>
+        </div>
+
+        <div class="strip">
+          <strong>Built with</strong>
+          <span>Hono · React · Vite · Playwright · better-sqlite3</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================  Features  ====================== -->
+    <section id="features">
+      <div class="wrap">
+        <div class="section-head">
+          <span class="eyebrow"><span class="dot"></span> Features</span>
+          <h2>Everything an SEO audit needs, nothing it doesn't.</h2>
+          <p>Each feature is built to produce exportable, evidence-based findings — not vague scores.
+            Drives a self-hosted React SPA and a Hono JSON API you can script against.</p>
+        </div>
+
+        <div class="features">
+
+          <div class="feature reveal">
+            <span class="icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+            </span>
+            <h3>Crawl</h3>
+            <p>JS-aware crawling via Playwright Chromium. Respects <code>robots.txt</code>, follows redirects, captures response codes, headers, and rendered HTML.</p>
+          </div>
+
+          <div class="feature reveal">
+            <span class="icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11h6"></path><path d="M9 15h4"></path><path d="M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16l-4-2-4 2-4-2-2 2Z"></path></svg>
+            </span>
+            <h3>Audit issues</h3>
+            <p>Title, meta, headings, canonical, hreflang, indexability, schema.org, OpenGraph,
+              image alts, broken anchors, redirect chains, and 30+ other rules. Each with a counter-example.</p>
+          </div>
+
+          <div class="feature reveal">
+            <span class="icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v6H4z"></path><path d="M4 14h16v6H4z"></path><path d="M8 7h.01"></path><path d="M8 17h.01"></path></svg>
+            </span>
+            <h3>Sitemaps</h3>
+            <p>Generate XML sitemaps directly from a crawl. Detect orphan URLs not referenced from
+              any internal link. Drifts against the expected sitemap are flagged per-URL.</p>
+          </div>
+
+          <div class="feature reveal">
+            <span class="icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"></path><path d="m7 16 4-4 4 2 6-7"></path></svg>
+            </span>
+            <h3>Compare runs</h3>
+            <p>Diff two crawls side by side: new URLs, lost URLs, regressions in titles / canonicals /
+              status codes. Saves the developer from "did this PR break ten pages?" guesswork.</p>
+          </div>
+
+          <div class="feature reveal">
+            <span class="icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a4 4 0 0 0-4 4v4a4 4 0 0 0 8 0V6a4 4 0 0 0-4-4Z"></path><path d="M5 11a7 7 0 0 0 14 0"></path><path d="M12 18v4"></path></svg>
+            </span>
+            <h3>AI insights</h3>
+            <p>Optional pluggable AI providers summarise the issues list into actionable briefs.
+              Bring your own key (OpenAI, Anthropic, Gemini, Ollama, …) — never proxied through us.</p>
+          </div>
+
+          <div class="feature reveal">
+            <span class="icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h18v10H3z"></path><path d="m3 7 9 6 9-6"></path><path d="M8 19h8"></path></svg>
+            </span>
+            <h3>Export</h3>
+            <p>CSV, JSON, or XLSX. Pipe straight into a job pipeline, drop into Sheets, or archive
+              for trend-tracking over time. Schema is documented and stable.</p>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================  How it works  ====================== -->
+    <section>
+      <div class="wrap">
+        <div class="section-head">
+          <span class="eyebrow"><span class="dot"></span> Workflow</span>
+          <h2>Three steps from install to insight.</h2>
+          <p>The whole loop runs on your laptop. No proxy, no queue, no third-party data store.
+            Plenty fast enough for sites with a few thousand pages.</p>
+        </div>
+
+        <div class="steps">
+
+          <div class="step reveal">
+            <h3>Install</h3>
+            <p>One shell command on macOS / Linux (or one batch file on Windows). The installer
+              drops a real desktop shortcut that launches the server + opens the dashboard.</p>
+          </div>
+
+          <div class="step reveal">
+            <h3>Crawl</h3>
+            <p>Drop a URL into the dashboard. The background worker renders JS, follows redirects,
+              stores each page in a local SQLite database, and streams progress to the UI live.</p>
+          </div>
+
+          <div class="step reveal">
+            <h3>Audit &amp; export</h3>
+            <p>Filter the issue list, drill into a URL, run a sitemap diff, compare two runs.
+              Hit <em>Export</em> when you're ready; pick CSV, JSON, or XLSX; download starts instantly.</p>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================  Install  ====================== -->
+    <section id="install">
+      <div class="wrap">
+        <div class="section-head">
+          <span class="eyebrow"><span class="dot"></span> Install</span>
+          <h2>It takes one line.</h2>
+          <p>The script downloads the latest self-contained bundle from GitHub Releases, extracts it
+            to a temp directory, runs the platform-specific installer, and cleans up after itself.
+            Source builds are also supported if you prefer to compile yourself.</p>
+        </div>
+
+        <div class="install reveal" id="install-tabs">
+          <div class="tabs" role="tablist">
+            <button class="active" role="tab" data-target="mac"   aria-selected="true">macOS</button>
+            <button                          role="tab" data-target="linux" aria-selected="false">Linux</button>
+            <button                          role="tab" data-target="win"   aria-selected="false">Windows</button>
+            <button                          role="tab" data-target="src"   aria-selected="false">From source</button>
+          </div>
+
+          <div class="panels">
+
+            <div class="panel active" id="panel-mac" role="tabpanel">
+              <h3>One-liner</h3>
+              <p>Downloads the latest macOS/Linux bundle, extracts, runs the installer.
+                The installer drops an <code>.app</code> shortcut on your Desktop.</p>
+              <div class="row">
+<pre><span class="dim">$</span> <span class="b">OSE_OWNER</span>=cuongquachc88 \
+   <span class="b">curl</span> -fsSL https://raw.githubusercontent.com/cuongquachc88/open-seo-checker/main/scripts/install-from-release.sh | <span class="b">bash</span></pre>
+                <button class="copy" data-copy="OSE_OWNER=cuongquachc88 curl -fsSL https://raw.githubusercontent.com/cuongquachc88/open-seo-checker/main/scripts/install-from-release.sh | bash">Copy</button>
+              </div>
+              <div class="more-installs">
+                <a href="https://github.com/cuongquachc88/open-seo-checker/releases/latest/download/open-seo-checker.tar.gz" rel="noopener">Download .tar.gz</a>
+                <a href="https://github.com/cuongquachc88/open-seo-checker" rel="noopener">Repo &amp; releases</a>
+                <a href="user-guide.html">Install guide</a>
+              </div>
+            </div>
+
+            <div class="panel" id="panel-linux" role="tabpanel">
+              <h3>One-liner</h3>
+              <p>The installer creates a <code>.desktop</code> entry on the user's Desktop
+                (XDG-aware, so it lands in the right place on GNOME, KDE, XFCE).</p>
+              <div class="row">
+<pre><span class="dim">$</span> <span class="b">OSE_OWNER</span>=cuongquachc88 \
+   <span class="b">curl</span> -fsSL https://raw.githubusercontent.com/cuongquachc88/open-seo-checker/main/scripts/install-from-release.sh | <span class="b">bash</span></pre>
+                <button class="copy" data-copy="OSE_OWNER=cuongquachc88 curl -fsSL https://raw.githubusercontent.com/cuongquachc88/open-seo-checker/main/scripts/install-from-release.sh | bash">Copy</button>
+              </div>
+              <div class="more-installs">
+                <a href="https://github.com/cuongquachc88/open-seo-checker/releases/latest/download/open-seo-checker.tar.gz" rel="noopener">Download .tar.gz</a>
+                <a href="user-guide.html">Install guide</a>
+              </div>
+            </div>
+
+            <div class="panel" id="panel-win" role="tabpanel">
+              <h3>PowerShell one-liner</h3>
+              <p>Downloads the Windows-friendly <code>.zip</code>, extracts, runs <code>install.bat</code>,
+                which creates a <code>.lnk</code> shortcut on the current user's Desktop.</p>
+              <div class="row">
+<pre><span class="dim">&gt;</span> <span class="b">set</span> OSE_OWNER=cuongquachc88
+<span class="dim">&gt;</span> <span class="b">curl</span> -fsSL https://raw.githubusercontent.com/cuongquachc88/open-seo-checker/main/scripts/install-from-release.bat | <span class="b">cmd</span></pre>
+                <button class="copy" data-copy='set OSE_OWNER=cuongquachc88^&^&amp; curl -fsSL https://raw.githubusercontent.com/cuongquachc88/open-seo-checker/main/scripts/install-from-release.bat ^| cmd'>Copy</button>
+              </div>
+              <div class="more-installs">
+                <a href="https://github.com/cuongquachc88/open-seo-checker/releases/latest/download/open-seo-checker.zip" rel="noopener">Download .zip</a>
+                <a href="user-guide.html">Install guide</a>
+              </div>
+            </div>
+
+            <div class="panel" id="panel-src" role="tabpanel">
+              <h3>Build from source</h3>
+              <p>Requires Node 18+ and <code>pnpm</code>. Useful for contributing or for hosts
+                without an official bundle (FreeBSD, headless Linux without GUI, etc.).</p>
+              <div class="row">
+<pre><span class="dim">$</span> <span class="b">git</span> clone https://github.com/cuongquachc88/open-seo-checker
+<span class="dim">$</span> <span class="b">cd</span> open-seo-checker
+<span class="dim">$</span> <span class="b">pnpm</span> install    <span class="dim"># installs deps + Playwright Chromium</span>
+<span class="dim">$</span> <span class="b">pnpm</span> build
+<span class="dim">$</span> <span class="b">pnpm</span> server    <span class="dim"># http://localhost:7437</span></pre>
+                <button class="copy" data-copy="git clone https://github.com/cuongquachc88/open-seo-checker && cd open-seo-checker && pnpm install && pnpm build && pnpm server">Copy</button>
+              </div>
+              <div class="more-installs">
+                <a href="dev-guide.html">Developer guide</a>
+                <a href="https://github.com/cuongquachc88/open-seo-checker" rel="noopener">Source on GitHub</a>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================  Use cases  ====================== -->
+    <section>
+      <div class="wrap">
+        <div class="section-head">
+          <span class="eyebrow"><span class="dot"></span> Who it's for</span>
+          <h2>Three personas, same toolbox.</h2>
+          <p>Open SEO Checker was built for technical marketers, agencies, and the platform
+            engineers who serve both. The same data drives three workflows.</p>
+        </div>
+
+        <div class="uses">
+
+          <div class="use reveal">
+            <span class="tag">In-house</span>
+            <strong>Solo technical SEO</strong>
+            Run nightly crawls against your own properties, diff against last week, ship
+            regressions as PR-blocking checks.
+          </div>
+
+          <div class="use reveal">
+            <span class="tag">Agency</span>
+            <strong>Client deliverables</strong>
+            Spin up a fresh crawl per project, export a CSV/XLSX report into the deck, throw
+            away the workspace when the engagement ends. Nothing about the client leaks.
+          </div>
+
+          <div class="use reveal">
+            <span class="tag">Platform team</span>
+            <strong>CI / dev infra</strong>
+            Run the API + CLI against a staging URL in CI; gate releases on regressions in
+            canonical / status / meta. Auth via API key.
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================  CTA  ====================== -->
+    <section>
+      <div class="wrap">
+        <div class="cta reveal">
+          <h2>Try it on a single page before committing.</h2>
+          <p>The fastest zero-config check is the one-liner below. It runs against any URL,
+            prints the top issues, and exits. No install needed.</p>
+          <div class="actions">
+            <a class="btn btn-primary" id="cta-btn" href="#install">Install the full app</a>
+            <a class="btn btn-ghost"   href="dev-guide.html">Read the developer guide</a>
+          </div>
+          <div style="margin-top: 28px; max-width: 640px; margin-left: auto; margin-right: auto;">
+            <div class="row" style="background: var(--code-bg); border-radius: var(--radius); border: 1px solid color-mix(in srgb, var(--brand-1) 25%, transparent);">
+<pre style="margin: 0; padding: 14px 16px; flex: 1; font-family: var(--font-mono); font-size: .85rem; line-height: 1.6; color: var(--code-fg); white-space: pre-wrap; overflow-wrap: anywhere;"><span style="color: #94a3b8;">$</span> <span style="color: #f0abfc;">oseo</span> crawl https://example.com --output report.csv</pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    <div class="wrap row">
+      <div>
+        <strong style="color: var(--text)">Open SEO Checker</strong> · local-first SEO auditing
+        <br>
+        <small>MIT · No accounts · No telemetry</small>
+      </div>
+      <div class="links">
+        <a href="user-guide.html">User guide</a>
+        <a href="dev-guide.html">Dev guide</a>
+        <a href="architecture.html">Architecture</a>
+        <a href="https://github.com/cuongquachc88/open-seo-checker" rel="noopener">Source</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    /* ----------  Theme toggle (auto / light / dark)  ---------- */
+    (function () {
+      var html = document.documentElement;
+      var KEY = 'oseo-theme';
+      var btn = document.getElementById('theme');
+      function set(t) {
+        html.setAttribute('data-theme', t);
+        try { localStorage.setItem(KEY, t); } catch (e) {}
+      }
+      try {
+        var stored = localStorage.getItem(KEY);
+        if (stored === 'light' || stored === 'dark') set(stored);
+      } catch (e) {}
+      btn && btn.addEventListener('click', function () {
+        var current = html.getAttribute('data-theme') ||
+          (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+        set(current === 'light' ? 'dark' : 'light');
+      });
+    })();
+
+    /* ----------  Install tabs  ---------- */
+    (function () {
+      var tabs = document.querySelectorAll('#install-tabs .tabs button');
+      var panels = document.querySelectorAll('#install-tabs .panel');
+      tabs.forEach(function (b) {
+        b.addEventListener('click', function () {
+          tabs.forEach(function (x) { x.classList.remove('active'); x.setAttribute('aria-selected', 'false'); });
+          panels.forEach(function (p) { p.classList.remove('active'); });
+          b.classList.add('active'); b.setAttribute('aria-selected', 'true');
+          var id = 'panel-' + b.getAttribute('data-target');
+          var p  = document.getElementById(id);
+          if (p) p.classList.add('active');
+        });
+      });
+    })();
+
+    /* ----------  Copy install commands  ---------- */
+    (function () {
+      document.querySelectorAll('.copy').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var text = btn.getAttribute('data-copy') || '';
+          if (!navigator.clipboard) return;
+          navigator.clipboard.writeText(text).then(function () {
+            var prev = btn.textContent;
+            btn.textContent = 'Copied';
+            setTimeout(function () { btn.textContent = prev; }, 1400);
+          });
+        });
+      });
+    })();
+
+    /* ----------  Reveal on scroll  ---------- */
+    (function () {
+      if (!window.IntersectionObserver) {
+        document.querySelectorAll('.reveal').forEach(function (el) { el.classList.add('in'); });
+        return;
+      }
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+        });
+      }, { threshold: 0.12 });
+      document.querySelectorAll('.reveal').forEach(function (el) { io.observe(el); });
+    })();
+  </script>
+</body>
+</html>

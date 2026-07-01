@@ -118,7 +118,7 @@ jobs:
 
             Both installers drop a desktop shortcut that starts the server
             and opens the dashboard with a single double-click. See the
-            full [manual install guide](wiki/index.html) for the headless /
+            full [manual install guide](docs/index.html) for the headless /
             CI path.
           files: |
             output/open-seo-checker.tar.gz

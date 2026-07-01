@@ -1,7 +1,7 @@
 name: Deploy GitHub Pages
 
 # ------------------------------------------------------------------------------
-#  Builds the static documentation site from the in-repo wiki/ folder and
+#  Builds the static documentation site from the in-repo docs/ folder and
 #  publishes it to GitHub Pages (https://<owner>.github.io/<repo>/).
 #
 #  - Triggers on every push to main and on manual dispatch.
@@ -15,7 +15,7 @@ name: Deploy GitHub Pages
 #    2.  Allow the workflow to write to the `github-pages` environment
 #        the first time it runs.
 #    3.  Push to main. The first successful run will publish
-#        https://<owner>.github.io/<repo>/  to show wiki/index.html.
+#        https://<owner>.github.io/<repo>/  to show docs/index.html.
 #
 #  Notes on `enablement`: we deliberately do NOT pass enablement: true
 #  to `actions/configure-pages@v5`. Org / repo policies commonly forbid
@@ -64,18 +64,14 @@ jobs:
         # step then just queries the existing config.
 
       - name: Stage site
-        # Promote wiki/index.html to the top-level so the deployed URL
+        # Promote docs/index.html to the top-level so the deployed URL
         # `https://<owner>.github.io/<repo>/` lands directly on the
-        # landing page. The wiki subdirectory is preserved in case any
-        # link points at it explicitly.
+        # landing page.
         run: |
           set -euo pipefail
+          rm -rf _site
           mkdir -p _site
-          # Copy every wiki page to the root of the published site ...
-          cp -R wiki/. _site/
-          # ... and also keep the wiki subdirectory for internal links.
-          mkdir -p _site/wiki
-          cp -R wiki/. _site/wiki/
+          cp -R docs/. _site/
           echo
           echo "===== site root ====="
           ls -la _site
