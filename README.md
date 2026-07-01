@@ -311,13 +311,20 @@ options:
 - `apiKeys`: API keys for integrations and AI.
 - `aiPrompts`: Custom AI prompts to run during crawl.
 
-## Install (deep-dive)
+## Updating & Uninstalling
 
-Need more than the `## Install` section above? The
-[install section in `docs/index.html`](docs/index.html) and the
-[user guide](docs/user-guide.html) cover prerequisites per OS,
-troubleshooting, the uninstall flow, and how to verify a clean
-install runs from a fresh `curl`.
+The install scripts are idempotent, so updating is just re-running
+them from the repo root:
+
+| Action | Command | Notes |
+|--------|---------|-------|
+| Update (refresh deps + build + shortcut) | `./install.sh`  or  `install.bat` | Safe to run as many times as you want; shortcuts are overwritten in place. |
+| Verify a fresh install | `curl -fsS http://localhost:7437/api/health` | Should return `{"status":"ok",...}` after a successful server start. |
+| Uninstall (clean slate) | `git clean -fdx` then `rm -f ~/Desktop/Open*SEO*Checker.{app,desktop,lnk,bat}` | Drops the desktop shortcut, the build artefacts, and the install state. Keep the source tree. |
+| Hard reset (Playwright cache) | `pnpm cache delete playwright && pnpm install` | Reinstalls Chromium cleanly if the JS-rendering browser gets corrupted. |
+
+The full troubleshooting matrix is in the wiki's install section
+([docs/index.html](docs/index.html), [user-guide.html](docs/user-guide.html)).
 
 ## Releasing
 
