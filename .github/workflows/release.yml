@@ -68,11 +68,14 @@ jobs:
         # Copy the install script + the prebuilt artefacts onto a single
         # tree that's tar/zip-friendly. Both archives include everything
         # the installer needs, so the recipient never has to run a build.
+        # All final artefacts land under ./output/ so nothing leaks to the
+        # workspace root.
         run: |
           set -euo pipefail
           STAGE="release-stage"
-          rm -rf "$STAGE"
-          mkdir -p "$STAGE"
+          OUTPUT="output"
+          rm -rf "$STAGE" "$OUTPUT"
+          mkdir -p "$STAGE" "$OUTPUT"
           # Public artefact paths
           cp -R public                  "$STAGE/public"
           cp -R packages/api/dist       "$STAGE/dist"
@@ -82,12 +85,19 @@ jobs:
           cp    open-seo-checker.bat    "$STAGE/open-seo-checker.bat"
           cp    start.sh                "$STAGE/start.sh"
           chmod +x "$STAGE/install.sh" "$STAGE/open-seo-checker.sh" "$STAGE/start.sh"
-          # Build both archive formats
-          (cd "$STAGE" && tar czf "../open-seo-checker.tar.gz" .)
-          (cd "$STAGE" && zip -qr "../open-seo-checker.zip" .)
+          # Build both archive formats into ./output/ — never anywhere else.
+          (cd "$STAGE" && tar czf "$GITHUB_WORKSPACE/$OUTPUT/open-seo-checker.tar.gz" .)
+          (cd "$STAGE" && zip -qr  "$GITHUB_WORKSPACE/$OUTPUT/open-seo-checker.zip" .)
+          # Belt-and-braces: confirm no tarball / zip artefact escaped to
+          # the workspace root, fail the job if so.
+          for ext in tar.gz zip tgz; do
+            leaked="$(find "$GITHUB_WORKSPACE" -maxdepth 1 -name "open-seo-checker.$ext" -print -quit)"
+            [ -z "$leaked" ] || { echo "::error::$leaked slipped out of output/"; exit 1; }
+          done
           echo
-          echo "===== artefacts ====="
-          ls -la open-seo-checker.tar.gz open-seo-checker.zip
+          echo "===== output/ ====="
+          ls -la "$OUTPUT"
+          rm -rf "$STAGE"
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
@@ -111,5 +121,5 @@ jobs:
             full [manual install guide](wiki/index.html) for the headless /
             CI path.
           files: |
-            open-seo-checker.tar.gz
-            open-seo-checker.zip
+            output/open-seo-checker.tar.gz
+            output/open-seo-checker.zip

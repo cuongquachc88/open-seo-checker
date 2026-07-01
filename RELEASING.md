@@ -82,12 +82,15 @@ To smoke-test a release without publishing:
 ```bash
 # build artefacts identical to what the workflow ships
 pnpm build
-mkdir -p .release
-cp -R public .release/
-cp -R packages/api/dist .release/dist
-cp install.sh .release/    # or install.bat on win
-tar czf .release/open-seo-checker.tar.gz .release/
+mkdir -p output
+cp -R public                       output/
+cp -R packages/api/dist            output/dist
+cp    install.sh install.bat open-seo-checker.sh open-seo-checker.bat start.sh   output/
+tar czf output/open-seo-checker.tar.gz -C output dist public install.sh install.bat open-seo-checker.sh open-seo-checker.bat start.sh
+(cd output && zip -qr ../output/open-seo-checker.zip dist public install.sh install.bat open-seo-checker.sh open-seo-checker.bat start.sh)
 ```
 
 Then drop the tarball to a clean container and run `./install.sh`
-to verify the closed-loop install path.
+to verify the closed-loop install path. The release.yml workflow
+performs the same packaging under `./output/` (with a CI-side check
+that nothing escaped to the workspace root).

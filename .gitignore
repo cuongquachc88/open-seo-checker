@@ -31,6 +31,10 @@ exports/
 coverage/
 tokens.json
 
+# Release artefacts produced by .github/workflows/release.yml (CI) or
+# the local manifest at the end of RELEASING.md. Never tracked.
+output/
+
 # Playwright artefacts
 /tests/e2e/.results/
 /tests/e2e/playwright-report/
