@@ -1,0 +1,82 @@
+name: Deploy GitHub Pages
+
+# ------------------------------------------------------------------------------
+#  Builds the static documentation site from the in-repo wiki/ folder and
+#  publishes it to GitHub Pages (https://<owner>.github.io/<repo>/).
+#
+#  - Triggers on every push to main and on manual dispatch.
+#  - Uses the official `actions/deploy-pages` + `actions/upload-artifact`
+#    pair, so the Pages source is "GitHub Actions" — no branch needs to be
+#    configured for Pages in the repo settings beyond enabling the env.
+#
+#  How to enable on a fresh repo:
+#    1.  Settings  ->  Pages  ->  Source: "GitHub Actions"
+#    2.  Allow the workflow to write to the `github-pages` environment.
+#    3.  Push to main. The first successful run will publish
+#        https://<owner>.github.io/<repo>/  to show wiki/index.html.
+# ------------------------------------------------------------------------------
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Avoid concurrent deploys corrupting each other.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+# Pages needs write access to publish and an OIDC token to sign the
+# artifact; keep `contents: read` so checkout stays minimal.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    name: Build site
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Stage site
+        # Promote wiki/index.html to the top-level so the deployed URL
+        # `https://<owner>.github.io/<repo>/` lands directly on the
+        # landing page. The wiki subdirectory is preserved in case any
+        # link points at it explicitly.
+        run: |
+          set -euo pipefail
+          mkdir -p _site
+          # Copy every wiki page to the root of the published site ...
+          cp -R wiki/. _site/
+          # ... and also keep the wiki subdirectory for internal links.
+          mkdir -p _site/wiki
+          cp -R wiki/. _site/wiki/
+          echo
+          echo "===== site root ====="
+          ls -la _site
+          echo
+          echo "===== site root .html files ====="
+          find _site -maxdepth 1 -type f -name '*.html' | sort
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
