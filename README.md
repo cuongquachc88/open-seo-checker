@@ -14,6 +14,10 @@ providers, schedule recurring crawls.
 Install in one command:
 
 ```bash
+# No clone / no build — downloads the latest release bundle:
+curl -fsSL https://raw.githubusercontent.com/cuongquachc88/open-seo-checker/main/scripts/install-from-release.sh | bash
+
+# Or install from the cloned source:
 ./install.sh      # macOS / Linux
 install.bat       # Windows
 ```
@@ -35,6 +39,7 @@ double-click**. Re-run any time to refresh the shortcut or rebuild.
 
 | Platform | Command | Desktop shortcut |
 |----------|---------|------------------|
+| **One-liner** (no clone) | `curl -fsSL https://raw.githubusercontent.com/cuongquachc88/open-seo-checker/main/scripts/install-from-release.sh \| bash` | Same as macOS / Linux below |
 | **macOS** | `./install.sh` *(or `bash install.sh`)* | `~/Desktop/Open SEO Checker.app` (Finder opens it like any app → Terminal.app starts the server) |
 | **Linux** | `./install.sh` *(or `bash install.sh`)* | `~/.local/share/applications/` or `~/Desktop/Open SEO Checker.desktop` (XDG entry) |
 | **Windows** | `install.bat` *(or double-click it in Explorer)* | `%USERPROFILE%\Desktop\Open SEO Checker.lnk` (real .lnk with custom icon) |
