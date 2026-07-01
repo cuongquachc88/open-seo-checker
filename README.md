@@ -133,15 +133,19 @@ open-seo-checker/                        ← @oseo/workspace  (orchestrator only
 ├── public/                              ← SPA build output (gitignored)
 ├── crawls/  exports/                    ← runtime artefacts (gitignored)
 ├── wiki/                                ← HTML doc (landing + user + dev + arch)
+├── docs/
+│   └── INSTALL.md                       ← deep-dive install + troubleshooting
 ├── .github/
 │   └── workflows/
-│       └── pages.yml                    ← GitHub Pages deploy of wiki/
+│       ├── pages.yml                    ← GitHub Pages deploy of wiki/
+│       └── release.yml                  ← tag-driven GitHub Release workflow
 ├── scripts/
 │   ├── start.sh                         ← single-command BE+FE orchestrator
 │   ├── monitor.sh                       ← second-screen tailer for start.sh logs
 │   └── postinstall.mjs                  ← installs Playwright Chromium
 ├── open-seo-checker.sh  /  .bat         ← one-click launcher
 ├── install.sh  /  install.bat           ← one-command installer + desktop shortcut
+├── RELEASING.md                         ← maintainer release notes
 └── README.md, PLAN.md
 ```
 
@@ -307,6 +311,18 @@ options:
 - `followRedirects`: HTTP redirect chain handling.
 - `apiKeys`: API keys for integrations and AI.
 - `aiPrompts`: Custom AI prompts to run during crawl.
+
+## Install (deep-dive)
+
+Need more than the `## Install` section above? `docs/INSTALL.md`
+covers prerequisites per OS, troubleshooting, the uninstall flow,
+and how to verify the install runs from a clean `curl`.
+
+## Releasing
+
+Maintainer notes: tagging, artefacts, hotfixes — `RELEASING.md`.
+The release pipeline itself is automated via
+`.github/workflows/release.yml`.
 
 ## Wiki
 
